@@ -391,7 +391,10 @@ activeList.addEventListener('click', (e) => {
     const inputDiv = activeList.querySelector(`.task-context-input[data-for="${taskId}"]`);
     if (inputDiv) {
       inputDiv.classList.remove('hidden');
-      inputDiv.querySelector('textarea').focus();
+      const textarea = inputDiv.querySelector('textarea');
+      textarea.focus();
+      adjustWindowHeight();
+      setTimeout(() => inputDiv.scrollIntoView({ block: 'nearest', behavior: 'smooth' }), 50);
     }
     return;
   }
@@ -401,6 +404,7 @@ activeList.addEventListener('click', (e) => {
     if (inputDiv) {
       inputDiv.classList.add('hidden');
       inputDiv.querySelector('textarea').value = '';
+      adjustWindowHeight();
     }
     return;
   }
