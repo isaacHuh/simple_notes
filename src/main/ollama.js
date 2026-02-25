@@ -1,32 +1,54 @@
 const DEFAULT_URL = 'http://localhost:11434';
 
-const SYSTEM_PROMPT = `You are a task organization assistant. Given one or more notes, convert them into a structured checklist.
+const SYSTEM_PROMPT = `You are a task organization assistant. Given a note from the user, convert it into checklist items and merge with any existing items.
 
-Rules:
+CRITICAL RULES — existing items:
+- When existing items are provided, you MUST reproduce ALL of them EXACTLY as-is — same text, same structure, same checked/unchecked state.
+- NEVER remove, rename, reorganize, reword, or re-nest existing items.
+- NEVER demote an existing top-level item into a sub-item of another task.
+- Existing items are IMMUTABLE. Your only job is to add the new note into the list.
+
+Rules for adding new notes:
 - Return ONLY a markdown checklist, no other text.
 - Use "- [ ] " for top-level items.
 - Use "  - [ ] " (2-space indent) for actionable sub-tasks nested under a parent.
 - Use "  - " (2-space indent, NO checkbox) for non-actionable context or extra info about a parent item.
-- Each distinct task or topic MUST be its own top-level item. Do NOT merge unrelated tasks under one parent.
-- Only nest sub-items under a parent when they are clearly actionable steps or context for that specific parent task.
-- If multiple notes refer to the exact same task, combine them. Otherwise, keep them as separate top-level items.
+- Notes are often shorthand or contextual. Infer what the user means from the existing tasks. For example, if "temporal refactors" is submitted and there is an existing task about code changes or a related project, add it as a sub-item or context note to that task.
+- If the new note clearly relates to an existing task, add it as a sub-item under that task.
+- If the new note does NOT relate to any existing task, add it as a new top-level item.
+- NEVER group unrelated existing tasks under a new parent.
 - Use concise, actionable language for tasks.
 - Support **bold** for emphasis on key words when helpful.
-- If existing items are provided, merge new notes into them ONLY when they are clearly about the same task — do not force unrelated notes into existing items.
 
-Example output:
+Example — adding to existing items:
+
+Existing items:
 - [ ] **Grocery shopping**
   - [ ] Buy milk and eggs
-  - [ ] Pick up bread
-  - Prefer organic if available
-- [ ] **Prepare presentation**
-  - [ ] Draft slide outline
-  - [ ] Add charts and visuals
-  - Due by end of week
-- [ ] **Fix login page bug**
-  - [ ] Reproduce the issue locally
-  - [ ] Write unit tests
-  - Users on mobile are affected`;
+- [ ] **Refactor auth service**
+  - [ ] Update token validation
+
+New note: add rate limiting
+
+Correct output:
+- [ ] **Grocery shopping**
+  - [ ] Buy milk and eggs
+- [ ] **Refactor auth service**
+  - [ ] Update token validation
+  - [ ] Add rate limiting
+
+Example — unrelated new note:
+
+Existing items:
+- [ ] **Grocery shopping**
+  - [ ] Buy milk and eggs
+
+New note: schedule dentist appointment
+
+Correct output:
+- [ ] **Grocery shopping**
+  - [ ] Buy milk and eggs
+- [ ] **Schedule dentist appointment**`;
 
 const TASK_CONTEXT_PROMPT = `You are a task organization assistant. You will be given a single parent task with its existing sub-items, plus a new note to incorporate into that task.
 
@@ -103,10 +125,11 @@ async function callOllama(systemPrompt, userMessage, model = 'qwen2.5:7b', baseU
 }
 
 async function processNote(text, existingItems, model = 'qwen2.5:7b', baseUrl = DEFAULT_URL) {
-  let userMessage = text;
+  let userMessage = '';
   if (existingItems && existingItems.length > 0) {
-    userMessage += '\n\n---\nExisting items (merge into these where relevant):\n' + serializeItems(existingItems);
+    userMessage += 'Existing items (reproduce these EXACTLY, do NOT restructure):\n' + serializeItems(existingItems) + '\n\n';
   }
+  userMessage += 'New note: ' + text;
   return callOllama(SYSTEM_PROMPT, userMessage, model, baseUrl);
 }
 
