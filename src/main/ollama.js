@@ -1,16 +1,33 @@
 const DEFAULT_URL = 'http://localhost:11434';
 
-const SYSTEM_PROMPT = `You are a task organization assistant. Convert the user's note into checklist items.
+const SYSTEM_PROMPT = `You are a minimal task assistant. Convert the user's note into checklist items.
+
+CRITICAL: Do NOT invent, expand, or break down tasks. Only create what the user explicitly stated.
 
 Rules:
 - Return ONLY a markdown checklist, no other text.
-- Use "- [ ] " for top-level items.
-- Use "  - [ ] " (2-space indent) for actionable sub-tasks.
-- Use "  - " (2-space indent, NO checkbox) for non-actionable context or notes about a parent item.
-- Use concise, actionable language.
-- Support **bold** for emphasis on key words when helpful.
-- If the note contains multiple distinct tasks, create separate top-level items for each.
-- If the note is a single task with multiple details, create one top-level item with sub-items.`;
+- Use "- [ ] " for items.
+- If the note is a single task, return a SINGLE "- [ ] " item. Do NOT add sub-tasks unless the user explicitly listed them.
+- Only create multiple items if the user explicitly listed multiple distinct things.
+- Only create sub-items ("  - [ ] " or "  - ") if the user explicitly provided details or steps.
+- Use the user's own wording. Do not rephrase, elaborate, or add detail.
+- Do NOT suggest steps, approaches, resources, or breakdowns the user did not ask for.
+
+Examples:
+User: "Read up on temporal nexus"
+Output: - [ ] Read up on temporal nexus
+
+User: "Buy groceries: milk, eggs, bread"
+Output:
+- [ ] Buy groceries
+  - [ ] Milk
+  - [ ] Eggs
+  - [ ] Bread
+
+User: "Fix login bug and update docs"
+Output:
+- [ ] Fix login bug
+- [ ] Update docs`;
 
 const TASK_CONTEXT_PROMPT = `You are a task organization assistant. You will be given a single parent task with its existing sub-items, plus a new note to incorporate into that task.
 
@@ -74,7 +91,7 @@ function serializeTask(task) {
   return line;
 }
 
-async function callOllama(systemPrompt, userMessage, model = 'qwen2.5:7b', baseUrl = DEFAULT_URL) {
+async function callOllama(systemPrompt, userMessage, model = 'qwen3:8b', baseUrl = DEFAULT_URL) {
   const response = await fetch(`${baseUrl}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -97,11 +114,11 @@ async function callOllama(systemPrompt, userMessage, model = 'qwen2.5:7b', baseU
   return data.message.content;
 }
 
-async function processNote(text, model = 'qwen2.5:7b', baseUrl = DEFAULT_URL) {
+async function processNote(text, model = 'qwen3:8b', baseUrl = DEFAULT_URL) {
   return callOllama(SYSTEM_PROMPT, text, model, baseUrl);
 }
 
-async function processTaskContext(parentText, existingChildren, noteText, model = 'qwen2.5:7b', baseUrl = DEFAULT_URL) {
+async function processTaskContext(parentText, existingChildren, noteText, model = 'qwen3:8b', baseUrl = DEFAULT_URL) {
   let userMessage = `Parent task: ${parentText}\n`;
   if (existingChildren && existingChildren.length > 0) {
     userMessage += `Existing sub-items:\n${serializeChildren(existingChildren)}\n`;
@@ -110,7 +127,7 @@ async function processTaskContext(parentText, existingChildren, noteText, model 
   return callOllama(TASK_CONTEXT_PROMPT, userMessage, model, baseUrl);
 }
 
-async function mergeTasks(taskA, taskB, model = 'qwen2.5:7b', baseUrl = DEFAULT_URL) {
+async function mergeTasks(taskA, taskB, model = 'qwen3:8b', baseUrl = DEFAULT_URL) {
   const userMessage = `Task A:\n${serializeTask(taskA)}\n\nTask B:\n${serializeTask(taskB)}`;
   return callOllama(MERGE_PROMPT, userMessage, model, baseUrl);
 }
