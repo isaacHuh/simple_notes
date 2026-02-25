@@ -411,6 +411,11 @@ function showConfirm(message) {
 // ---- Markdown Rendering ----
 function renderMarkdown(text) {
   let html = escapeHtml(text);
+  // Auto-link URLs (after escaping so angle brackets are safe)
+  html = html.replace(
+    /https?:\/\/[^\s<>&"'`)(]+(?:\([^\s<>&"'`)(]*\))*[^\s<>&"'`)(.,;:!?\]})]/gi,
+    (url) => `<a href="${url}" class="task-link" title="${url}">${url}</a>`
+  );
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
   html = html.replace(/`(.+?)`/g, '<code>$1</code>');
@@ -513,6 +518,17 @@ function createItemHTML(item, isCompleted) {
 }
 
 // ---- Event Handlers ----
+
+// Link clicks — open externally and stop propagation (event delegation)
+function handleLinkClick(e) {
+  const link = e.target.closest('a.task-link');
+  if (!link) return;
+  e.preventDefault();
+  e.stopPropagation();
+  window.api.openExternal(link.href);
+}
+activeList.addEventListener('click', handleLinkClick, true);
+completedList.addEventListener('click', handleLinkClick, true);
 
 // Checkbox changes (event delegation)
 activeList.addEventListener('change', handleCheckboxChange);
