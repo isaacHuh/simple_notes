@@ -1109,6 +1109,225 @@ li.drop-target {
   transform: scale(0.98);
 }
 
+/* ── Setup Wizard ── */
+#setup-wizard {
+  position: fixed;
+  inset: 0;
+  background: var(--surface);
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  animation: fade-in 0.3s ease;
+}
+
+.setup-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 28px 24px 18px;
+  overflow-y: auto;
+}
+
+.setup-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 28px;
+}
+
+.setup-title {
+  font-family: var(--font-title);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.04em;
+}
+
+.setup-subtitle {
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.setup-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+}
+
+.setup-step {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.step-indicator {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.step-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.step-icon.step-pass { color: #4ade80; }
+.step-icon.step-fail { color: var(--danger); }
+.step-icon.step-checking { color: var(--accent); animation: dot-pulse 1.4s ease-in-out infinite; }
+.step-icon.step-waiting { color: var(--text-muted); }
+
+.step-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.step-label {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text);
+  transition: color 0.3s;
+}
+
+[data-status="waiting"] .step-label {
+  color: var(--text-muted);
+}
+
+[data-status="pass"] .step-label {
+  color: #4ade80;
+}
+
+.step-hint {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.step-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.setup-btn {
+  background: var(--accent-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-btn);
+  padding: 6px 14px;
+  color: var(--accent);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s;
+  letter-spacing: 0.02em;
+}
+
+.setup-btn:hover {
+  background: var(--accent-glow);
+  border-color: var(--border-accent);
+}
+
+.setup-btn-text {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 11px;
+  cursor: pointer;
+  padding: 6px 4px;
+  transition: color 0.15s;
+}
+
+.setup-btn-text:hover {
+  color: var(--text);
+}
+
+.setup-btn-primary {
+  background: var(--accent);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-btn);
+  padding: 8px 24px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: var(--font-body);
+  cursor: pointer;
+  transition: all 0.15s;
+  letter-spacing: 0.02em;
+  width: 100%;
+}
+
+.setup-btn-primary:hover {
+  opacity: 0.9;
+  transform: translateY(-0.5px);
+}
+
+.setup-footer {
+  margin-top: 24px;
+}
+
+.setup-skip {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: var(--font-body);
+  font-size: 10.5px;
+  cursor: pointer;
+  padding: 12px 0 0;
+  text-align: center;
+  width: 100%;
+  transition: color 0.15s;
+  letter-spacing: 0.02em;
+}
+
+.setup-skip:hover {
+  color: var(--text-muted);
+}
+
+/* Progress bar for model pull */
+.step-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.progress-bar {
+  height: 4px;
+  background: var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+  width: 100%;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
 /* ── Utility ── */
 .hidden {
   display: none !important;
