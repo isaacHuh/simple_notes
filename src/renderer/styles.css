@@ -802,6 +802,120 @@ li.drop-target {
   border-radius: var(--radius-sm);
 }
 
+/* ── History Button & Panel ── */
+#history-btn {
+  -webkit-app-region: no-drag;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  margin-right: var(--space-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: color var(--duration-fast), background var(--duration-fast);
+}
+
+#history-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface-hover);
+}
+
+#history-panel {
+  position: fixed;
+  inset: 42px 0 0 0;
+  background: var(--bg-base);
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  animation: overlay-in var(--duration-fast) var(--ease-out);
+}
+
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-lg);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.history-header button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  transition: color var(--duration-fast);
+}
+
+.history-header button:hover {
+  color: var(--text-primary);
+}
+
+#history-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-xs) 0;
+}
+
+#history-list li {
+  padding: var(--space-sm) var(--space-lg);
+  margin: 0;
+  border-radius: 0;
+  border-bottom: 1px solid var(--border);
+  cursor: default;
+}
+
+#history-list li:last-child {
+  border-bottom: none;
+}
+
+#history-list li:hover {
+  background: var(--bg-surface);
+}
+
+.history-text {
+  font-size: 12px;
+  color: var(--text-primary);
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+.history-meta {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: 2px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.history-badge {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+}
+
+#history-empty {
+  padding: var(--space-xl);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
 /* ── Undo Button ── */
 #undo-btn {
   -webkit-app-region: no-drag;

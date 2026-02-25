@@ -24,6 +24,11 @@ const confirmDialog = document.getElementById('confirm-dialog');
 const confirmMessage = document.getElementById('confirm-message');
 const confirmOkBtn = document.getElementById('confirm-ok');
 const confirmCancelBtn = document.getElementById('confirm-cancel');
+const historyBtn = document.getElementById('history-btn');
+const historyPanel = document.getElementById('history-panel');
+const historyList = document.getElementById('history-list');
+const historyEmpty = document.getElementById('history-empty');
+const historyClose = document.getElementById('history-close');
 
 // ---- SVG Icons ----
 const ICON_PLUS = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -34,9 +39,11 @@ const ICON_PLUS = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
 async function init() {
   appData = await window.api.loadData();
   if (!appData.versions) appData.versions = [];
+  if (!appData.inputHistory) appData.inputHistory = [];
   applyTheme(appData.settings.theme || 'light');
   renderChecklist(true);
   updateUndoButton();
+  updateHistoryButton();
   checkOllamaStatus();
 }
 
@@ -53,14 +60,62 @@ themeToggle.addEventListener('click', () => {
   save();
 });
 
+// ---- Input History ----
+function pushInput(text, source = 'note') {
+  appData.inputHistory.push({
+    text,
+    source,
+    timestamp: new Date().toISOString(),
+  });
+  if (appData.inputHistory.length > 50) {
+    appData.inputHistory = appData.inputHistory.slice(-50);
+  }
+  updateHistoryButton();
+}
+
+function updateHistoryButton() {
+  historyBtn.classList.toggle('hidden', appData.inputHistory.length === 0);
+}
+
+function renderHistory() {
+  const entries = [...appData.inputHistory].reverse();
+  if (entries.length === 0) {
+    historyList.innerHTML = '';
+    historyEmpty.classList.remove('hidden');
+    return;
+  }
+  historyEmpty.classList.add('hidden');
+  historyList.innerHTML = entries.map((entry) => {
+    const time = new Date(entry.timestamp).toLocaleString(undefined, {
+      month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
+    });
+    return `<li>
+      <div class="history-text">${escapeHtml(entry.text)}</div>
+      <div class="history-meta">
+        <span class="history-badge">${entry.source}</span>
+        <span>${time}</span>
+      </div>
+    </li>`;
+  }).join('');
+}
+
+historyBtn.addEventListener('click', () => {
+  renderHistory();
+  historyPanel.classList.remove('hidden');
+});
+
+historyClose.addEventListener('click', () => {
+  historyPanel.classList.add('hidden');
+});
+
 // ---- Version History ----
 function pushVersion() {
   appData.versions.push({
     items: JSON.parse(JSON.stringify(appData.items)),
     timestamp: new Date().toISOString(),
   });
-  if (appData.versions.length > 20) {
-    appData.versions = appData.versions.slice(-20);
+  if (appData.versions.length > 50) {
+    appData.versions = appData.versions.slice(-50);
   }
   updateUndoButton();
 }
@@ -326,6 +381,7 @@ async function handleTaskContext(taskId, noteText) {
   const item = appData.items.find((i) => i.id === taskId);
   if (!item) return;
 
+  pushInput(noteText, 'context');
   pushVersion();
   showLoading(true);
 
@@ -397,6 +453,7 @@ async function handleMerge(sourceId, targetId) {
   const target = appData.items.find((i) => i.id === targetId);
   if (!source || !target) return;
 
+  pushInput(`[merge] "${source.text}" + "${target.text}"`, 'merge');
   pushVersion();
   showLoading(true);
 
@@ -449,6 +506,7 @@ function handleSubmit() {
   const noteText = noteInput.value.trim();
   if (!noteText) return;
 
+  pushInput(noteText, 'note');
   noteInput.value = '';
   noteInput.focus();
   noteQueue.push(noteText);

@@ -31,6 +31,12 @@
         <path d="M4.5 3.5L2.5 5.5l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
+    <button id="history-btn" class="hidden" title="Input history">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        <path d="M7 4v3.5l2.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
     <button id="theme-toggle" title="Toggle theme">
       <svg class="icon-moon" width="14" height="14" viewBox="0 0 14 14" fill="none">
         <path d="M7 2a5 5 0 104.33 7.5A3.88 3.88 0 017 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
@@ -85,6 +91,20 @@
         <path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
     </button>
+  </div>
+
+  <!-- Input history panel -->
+  <div id="history-panel" class="hidden">
+    <div class="history-header">
+      <span>Input History</span>
+      <button id="history-close">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <ul id="history-list"></ul>
+    <div id="history-empty" class="hidden">No input history yet</div>
   </div>
 
   <!-- Loading overlay (used only for task context processing) -->
