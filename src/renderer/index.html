@@ -6,14 +6,24 @@
         content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src http://localhost:*;">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <title>SimpleNotes</title>
 </head>
 <body>
   <!-- Draggable title bar -->
   <div id="drag-handle">
-    <span class="drag-dots">&#x2630;</span>
+    <svg class="drag-icon" width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <circle cx="3" cy="3" r="1" fill="currentColor"/>
+      <circle cx="7" cy="3" r="1" fill="currentColor"/>
+      <circle cx="11" cy="3" r="1" fill="currentColor"/>
+      <circle cx="3" cy="7" r="1" fill="currentColor"/>
+      <circle cx="7" cy="7" r="1" fill="currentColor"/>
+      <circle cx="11" cy="7" r="1" fill="currentColor"/>
+      <circle cx="3" cy="11" r="1" fill="currentColor"/>
+      <circle cx="7" cy="11" r="1" fill="currentColor"/>
+      <circle cx="11" cy="11" r="1" fill="currentColor"/>
+    </svg>
     <span class="title">SimpleNotes</span>
     <div id="status-indicator" class="status-dot offline" title="Ollama: checking..."></div>
   </div>
@@ -22,7 +32,13 @@
   <div id="checklist-section">
     <ul id="active-list"></ul>
     <div id="empty-state" class="hidden">
-      <p>No items yet. Type a note below and press Enter to generate checklist items.</p>
+      <svg class="empty-icon" width="48" height="48" viewBox="0 0 48 48" fill="none">
+        <rect x="8" y="6" width="32" height="36" rx="4" stroke="currentColor" stroke-width="1.5"/>
+        <line x1="16" y1="16" x2="32" y2="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
+        <line x1="16" y1="22" x2="28" y2="22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.35"/>
+        <line x1="16" y1="28" x2="30" y2="28" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.2"/>
+      </svg>
+      <p>Type a note below and press Enter to create checklist items</p>
     </div>
   </div>
 
@@ -30,27 +46,39 @@
   <div id="completed-section">
     <button id="completed-toggle" class="section-toggle">
       Completed (<span id="completed-count">0</span>)
-      <span class="chevron">&#9660;</span>
+      <span class="chevron">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+          <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </span>
     </button>
     <ul id="completed-list" class="collapsed"></ul>
-    <button id="clear-completed" class="text-button hidden">Clear Completed</button>
+    <button id="clear-completed" class="text-button hidden">Clear completed</button>
   </div>
 
   <!-- Input area -->
   <div id="input-section">
-    <textarea id="note-input" placeholder="Type your note... (Enter to submit, Shift+Enter for new line)" rows="3"></textarea>
+    <textarea id="note-input" placeholder="What's on your mind?" rows="3"></textarea>
   </div>
 
   <!-- Error banner -->
   <div id="error-banner" class="hidden">
     <span id="error-message"></span>
-    <button id="error-dismiss">&times;</button>
+    <button id="error-dismiss">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
   </div>
 
   <!-- Loading overlay -->
   <div id="loading-overlay" class="hidden">
-    <div class="spinner"></div>
-    <span>Processing with Ollama...</span>
+    <div class="loading-dots">
+      <span></span>
+      <span></span>
+      <span></span>
+    </div>
+    <span class="loading-text">Processing with Ollama</span>
   </div>
 
   <script src="app.js"></script>

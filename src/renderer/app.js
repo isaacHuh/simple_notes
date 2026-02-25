@@ -15,10 +15,15 @@ const errorMessage = document.getElementById('error-message');
 const errorDismiss = document.getElementById('error-dismiss');
 const loadingOverlay = document.getElementById('loading-overlay');
 
+// ---- SVG Icons ----
+const ICON_PLUS = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+  <path d="M6 2v8M2 6h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+</svg>`;
+
 // ---- Initialization ----
 async function init() {
   appData = await window.api.loadData();
-  renderChecklist();
+  renderChecklist(true);
   checkOllamaStatus();
 }
 
@@ -35,12 +40,21 @@ function renderMarkdown(text) {
 }
 
 // ---- Rendering ----
-function renderChecklist() {
+function renderChecklist(animate = false) {
   const active = appData.items.filter((i) => !i.completed);
   const completed = appData.items.filter((i) => i.completed);
 
   activeList.innerHTML = active.map((item) => createItemHTML(item)).join('');
   completedList.innerHTML = completed.map((item) => createItemHTML(item, true)).join('');
+
+  // Stagger entrance animations on active items
+  if (animate) {
+    const items = activeList.querySelectorAll(':scope > li');
+    items.forEach((el, i) => {
+      el.classList.add('animate-in');
+      el.style.animationDelay = `${i * 50}ms`;
+    });
+  }
 
   completedCount.textContent = completed.length;
 
@@ -80,7 +94,7 @@ function createItemHTML(item, isCompleted) {
   }
 
   const addContextBtn = !isCompleted
-    ? `<button class="task-context-btn" data-id="${item.id}" title="Add context to this task">+</button>`
+    ? `<button class="task-context-btn" data-id="${item.id}" title="Add context">${ICON_PLUS}</button>`
     : '';
 
   return `<li data-id="${item.id}" class="${isCompleted ? 'completed' : ''}">
@@ -241,7 +255,7 @@ async function handleTaskContext(taskId, noteText) {
     );
     item.children = updatedChildren;
     await save();
-    renderChecklist();
+    renderChecklist(true);
   } catch (err) {
     if (err.message.includes('fetch') || err.message.includes('ECONNREFUSED')) {
       showError('Ollama is not running. Start it with: ollama serve');
@@ -296,7 +310,7 @@ async function handleSubmit() {
       // Replace all items with the merged result from the LLM
       appData.items = newItems;
       await save();
-      renderChecklist();
+      renderChecklist(true);
       noteInput.value = '';
     }
   } catch (err) {

@@ -17,11 +17,12 @@ const mb = menubar({
   tooltip: 'SimpleNotes',
   browserWindow: {
     width: 400,
-    height: 400,
+    height: 500,
     frame: false,
     resizable: false,
     alwaysOnTop: true,
     skipTaskbar: true,
+    backgroundColor: '#0c0c10',
     webPreferences: {
       preload: path.join(__dirname, '../preload/preload.js'),
       contextIsolation: true,
