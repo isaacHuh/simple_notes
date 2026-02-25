@@ -14,7 +14,7 @@ const mb = menubar({
   index: `file://${path.join(__dirname, '../renderer/index.html')}`,
   icon: path.join(assetsPath, 'IconTemplate.png'),
   preloadWindow: true,
-  tooltip: 'SimpleNotes',
+  tooltip: 'Sticky',
   browserWindow: {
     width: 400,
     height: 500,
@@ -43,7 +43,7 @@ mb.on('ready', () => {
     { type: 'separator' },
     { label: 'Preferences...', enabled: false },
     { type: 'separator' },
-    { label: 'Quit SimpleNotes', click: () => app.quit() },
+    { label: 'Quit Sticky', click: () => app.quit() },
   ]);
 
   mb.tray.on('right-click', () => {
@@ -66,11 +66,20 @@ ipcMain.handle('process-note', async (_event, text) => {
   const data = store.loadData();
   const model = data.settings.ollamaModel;
   const baseUrl = data.settings.ollamaUrl;
-  const existingItems = data.items || [];
 
-  const response = await ollama.processNote(text, existingItems, model, baseUrl);
+  const response = await ollama.processNote(text, model, baseUrl);
   const items = parseChecklist(response);
   return items;
+});
+
+ipcMain.handle('merge-tasks', async (_event, taskA, taskB) => {
+  const data = store.loadData();
+  const model = data.settings.ollamaModel;
+  const baseUrl = data.settings.ollamaUrl;
+
+  const response = await ollama.mergeTasks(taskA, taskB, model, baseUrl);
+  const items = parseChecklist(response);
+  return items[0] || null;
 });
 
 ipcMain.handle('process-task-context', async (_event, parentText, existingChildren, noteText) => {

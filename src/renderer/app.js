@@ -1,7 +1,8 @@
 // ---- State ----
-let appData = { items: [], settings: {} };
+let appData = { items: [], versions: [], settings: {} };
 let noteQueue = [];
 let isProcessing = false;
+let dragSourceId = null;
 
 // ---- DOM References ----
 const activeList = document.getElementById('active-list');
@@ -17,6 +18,7 @@ const errorMessage = document.getElementById('error-message');
 const errorDismiss = document.getElementById('error-dismiss');
 const loadingOverlay = document.getElementById('loading-overlay');
 const themeToggle = document.getElementById('theme-toggle');
+const undoBtn = document.getElementById('undo-btn');
 const queueIndicator = document.getElementById('queue-indicator');
 const confirmDialog = document.getElementById('confirm-dialog');
 const confirmMessage = document.getElementById('confirm-message');
@@ -31,8 +33,10 @@ const ICON_PLUS = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
 // ---- Initialization ----
 async function init() {
   appData = await window.api.loadData();
+  if (!appData.versions) appData.versions = [];
   applyTheme(appData.settings.theme || 'light');
   renderChecklist(true);
+  updateUndoButton();
   checkOllamaStatus();
 }
 
@@ -48,6 +52,35 @@ themeToggle.addEventListener('click', () => {
   appData.settings.theme = next;
   save();
 });
+
+// ---- Version History ----
+function pushVersion() {
+  appData.versions.push({
+    items: JSON.parse(JSON.stringify(appData.items)),
+    timestamp: new Date().toISOString(),
+  });
+  if (appData.versions.length > 20) {
+    appData.versions = appData.versions.slice(-20);
+  }
+  updateUndoButton();
+}
+
+function undo() {
+  if (appData.versions.length === 0) return;
+  const version = appData.versions.pop();
+  appData.items = version.items;
+  save();
+  renderChecklist(true);
+  updateUndoButton();
+}
+
+function updateUndoButton() {
+  const count = appData.versions.length;
+  undoBtn.classList.toggle('hidden', count === 0);
+  undoBtn.title = count > 0 ? `Undo last AI change (${count} version${count !== 1 ? 's' : ''})` : '';
+}
+
+undoBtn.addEventListener('click', undo);
 
 // ---- Custom Confirm Dialog ----
 function showConfirm(message) {
@@ -77,11 +110,8 @@ function showConfirm(message) {
 // ---- Markdown Rendering ----
 function renderMarkdown(text) {
   let html = escapeHtml(text);
-  // Bold: **text**
   html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  // Italic: *text*
   html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-  // Inline code: `text`
   html = html.replace(/`(.+?)`/g, '<code>$1</code>');
   return html;
 }
@@ -91,10 +121,9 @@ function renderChecklist(animate = false) {
   const active = appData.items.filter((i) => !i.completed);
   const completed = appData.items.filter((i) => i.completed);
 
-  activeList.innerHTML = active.map((item) => createItemHTML(item)).join('');
+  activeList.innerHTML = active.map((item) => createItemHTML(item, false)).join('');
   completedList.innerHTML = completed.map((item) => createItemHTML(item, true)).join('');
 
-  // Stagger entrance animations on active items
   if (animate) {
     const items = activeList.querySelectorAll(':scope > li');
     items.forEach((el, i) => {
@@ -105,14 +134,12 @@ function renderChecklist(animate = false) {
 
   completedCount.textContent = completed.length;
 
-  // Show/hide empty state
   if (active.length === 0 && completed.length === 0) {
     emptyState.classList.remove('hidden');
   } else {
     emptyState.classList.add('hidden');
   }
 
-  // Show/hide completed section
   if (completed.length > 0) {
     document.getElementById('completed-section').style.display = '';
     clearCompletedBtn.classList.toggle('hidden', completedList.classList.contains('collapsed'));
@@ -144,7 +171,9 @@ function createItemHTML(item, isCompleted) {
     ? `<button class="task-context-btn" data-id="${item.id}" title="Add context">${ICON_PLUS}</button>`
     : '';
 
-  return `<li data-id="${item.id}" class="${isCompleted ? 'completed' : ''}">
+  const draggable = !isCompleted ? ' draggable="true"' : '';
+
+  return `<li data-id="${item.id}" class="${isCompleted ? 'completed' : ''}"${draggable}>
       <div class="item-row">
         <label>
           <input type="checkbox" ${item.completed ? 'checked' : ''}>
@@ -175,7 +204,6 @@ function handleCheckboxChange(e) {
   if (!li) return;
   const id = li.dataset.id;
 
-  // Check if it's a sub-item
   const parentLi = li.closest('li:not(.sub-item)');
   if (li.classList.contains('sub-item') && parentLi) {
     const parentId = parentLi.dataset.id;
@@ -209,7 +237,6 @@ async function handleItemContextMenu(e) {
   e.preventDefault();
   const id = li.dataset.id;
 
-  // Check if it's a sub-item
   if (li.classList.contains('sub-item')) {
     const parentLi = li.closest('li:not(.sub-item)');
     if (parentLi) {
@@ -237,7 +264,6 @@ async function handleItemContextMenu(e) {
 
 // Per-task context button (event delegation)
 activeList.addEventListener('click', (e) => {
-  // Open inline context input
   const ctxBtn = e.target.closest('.task-context-btn');
   if (ctxBtn) {
     e.preventDefault();
@@ -250,7 +276,6 @@ activeList.addEventListener('click', (e) => {
     return;
   }
 
-  // Cancel
   if (e.target.closest('.task-context-cancel')) {
     const inputDiv = e.target.closest('.task-context-input');
     if (inputDiv) {
@@ -260,7 +285,6 @@ activeList.addEventListener('click', (e) => {
     return;
   }
 
-  // Submit context for a specific task
   const submitBtnEl = e.target.closest('.task-context-submit');
   if (submitBtnEl) {
     const inputDiv = e.target.closest('.task-context-input');
@@ -274,11 +298,12 @@ activeList.addEventListener('click', (e) => {
   }
 });
 
-// Allow Ctrl/Cmd+Enter to submit task context
+// Enter to submit context, Shift+Enter for new line
 activeList.addEventListener('keydown', (e) => {
-  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+  if (e.key === 'Enter' && !e.shiftKey) {
     const inputDiv = e.target.closest('.task-context-input');
     if (inputDiv) {
+      e.preventDefault();
       const taskId = inputDiv.dataset.for;
       const text = e.target.value.trim();
       if (text) {
@@ -292,6 +317,7 @@ async function handleTaskContext(taskId, noteText) {
   const item = appData.items.find((i) => i.id === taskId);
   if (!item) return;
 
+  pushVersion();
   showLoading(true);
 
   try {
@@ -304,14 +330,82 @@ async function handleTaskContext(taskId, noteText) {
     await save();
     renderChecklist(true);
   } catch (err) {
-    if (err.message.includes('fetch') || err.message.includes('ECONNREFUSED')) {
-      showError('Ollama is not running. Start it with: ollama serve');
-    } else if (err.message.includes('404') || err.message.includes('not found')) {
-      const model = appData.settings.ollamaModel || 'qwen2.5:7b';
-      showError(`Model not found. Run: ollama pull ${model}`);
-    } else {
-      showError(err.message);
+    handleOllamaError(err);
+  } finally {
+    showLoading(false);
+  }
+}
+
+// ---- Drag and Drop (merge task trees) ----
+activeList.addEventListener('dragstart', (e) => {
+  const li = e.target.closest('#active-list > li');
+  if (!li) return;
+  dragSourceId = li.dataset.id;
+  li.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', dragSourceId);
+});
+
+activeList.addEventListener('dragend', (e) => {
+  const li = e.target.closest('#active-list > li');
+  if (li) li.classList.remove('dragging');
+  activeList.querySelectorAll('.drop-target').forEach((el) => el.classList.remove('drop-target'));
+  dragSourceId = null;
+});
+
+activeList.addEventListener('dragover', (e) => {
+  const li = e.target.closest('#active-list > li');
+  if (!li || li.dataset.id === dragSourceId) return;
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  // Clear previous drop targets, highlight current
+  activeList.querySelectorAll('.drop-target').forEach((el) => el.classList.remove('drop-target'));
+  li.classList.add('drop-target');
+});
+
+activeList.addEventListener('dragleave', (e) => {
+  const li = e.target.closest('#active-list > li');
+  if (li && !li.contains(e.relatedTarget)) {
+    li.classList.remove('drop-target');
+  }
+});
+
+activeList.addEventListener('drop', async (e) => {
+  e.preventDefault();
+  const targetLi = e.target.closest('#active-list > li');
+  if (!targetLi || targetLi.dataset.id === dragSourceId) return;
+  targetLi.classList.remove('drop-target');
+
+  const sourceId = dragSourceId;
+  const targetId = targetLi.dataset.id;
+  dragSourceId = null;
+
+  await handleMerge(sourceId, targetId);
+});
+
+async function handleMerge(sourceId, targetId) {
+  const source = appData.items.find((i) => i.id === sourceId);
+  const target = appData.items.find((i) => i.id === targetId);
+  if (!source || !target) return;
+
+  pushVersion();
+  showLoading(true);
+
+  try {
+    const merged = await window.api.mergeTasks(source, target);
+    if (!merged) {
+      showError('Could not merge tasks. Try again.');
+      return;
     }
+
+    const targetIndex = appData.items.findIndex((i) => i.id === targetId);
+    appData.items = appData.items.filter((i) => i.id !== sourceId && i.id !== targetId);
+    appData.items.splice(Math.min(targetIndex, appData.items.length), 0, merged);
+
+    await save();
+    renderChecklist(true);
+  } catch (err) {
+    handleOllamaError(err);
   } finally {
     showLoading(false);
   }
@@ -346,7 +440,6 @@ function handleSubmit() {
   const noteText = noteInput.value.trim();
   if (!noteText) return;
 
-  // Immediately clear input and enqueue
   noteInput.value = '';
   noteInput.focus();
   noteQueue.push(noteText);
@@ -364,24 +457,21 @@ async function processQueue() {
     const noteText = noteQueue.shift();
     updateQueueIndicator();
 
+    // Snapshot before each LLM processing
+    pushVersion();
+
     try {
       const newItems = await window.api.processNote(noteText);
       if (newItems.length === 0) {
         showError('Could not extract any checklist items. Try rephrasing your note.');
       } else {
-        appData.items = newItems;
+        // Append new items (no merge — new notes are always new items)
+        appData.items = [...appData.items, ...newItems];
         await save();
         renderChecklist(true);
       }
     } catch (err) {
-      if (err.message.includes('fetch') || err.message.includes('ECONNREFUSED')) {
-        showError('Ollama is not running. Start it with: ollama serve');
-      } else if (err.message.includes('404') || err.message.includes('not found')) {
-        const model = appData.settings.ollamaModel || 'qwen2.5:7b';
-        showError(`Model not found. Run: ollama pull ${model}`);
-      } else {
-        showError(err.message);
-      }
+      handleOllamaError(err);
     }
   }
 
@@ -428,7 +518,6 @@ async function checkOllamaStatus() {
   }
 }
 
-// Check every 30 seconds
 setInterval(checkOllamaStatus, 30000);
 
 // ---- UI Helpers ----
@@ -439,10 +528,20 @@ function showLoading(visible) {
 function showError(msg) {
   errorMessage.textContent = msg;
   errorBanner.classList.remove('hidden');
-  // Auto-dismiss after 8 seconds
   setTimeout(() => {
     errorBanner.classList.add('hidden');
   }, 8000);
+}
+
+function handleOllamaError(err) {
+  if (err.message.includes('fetch') || err.message.includes('ECONNREFUSED')) {
+    showError('Ollama is not running. Start it with: ollama serve');
+  } else if (err.message.includes('404') || err.message.includes('not found')) {
+    const model = appData.settings.ollamaModel || 'qwen2.5:7b';
+    showError(`Model not found. Run: ollama pull ${model}`);
+  } else {
+    showError(err.message);
+  }
 }
 
 function escapeHtml(text) {

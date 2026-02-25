@@ -24,15 +24,6 @@
   --danger-surface: #ffebe9;
   --success: #1a7f37;
 
-  /* GitHub diff colors */
-  --diff-add-bg: #dafbe1;
-  --diff-add-hover: #c2f5ce;
-  --diff-add-border: #2da44e;
-  --diff-del-bg: #ffebe9;
-  --diff-del-hover: #ffd5d2;
-  --diff-del-border: #cf222e;
-  --diff-del-text: #82071e;
-
   /* Checkbox */
   --checkbox-check: #ffffff;
 
@@ -84,14 +75,6 @@
   --danger: #f85149;
   --danger-surface: rgba(248, 81, 73, 0.1);
   --success: #3fb950;
-
-  --diff-add-bg: rgba(46, 160, 67, 0.15);
-  --diff-add-hover: rgba(46, 160, 67, 0.22);
-  --diff-add-border: #3fb950;
-  --diff-del-bg: rgba(248, 81, 73, 0.1);
-  --diff-del-hover: rgba(248, 81, 73, 0.18);
-  --diff-del-border: #f85149;
-  --diff-del-text: #f85149;
 
   --checkbox-check: #ffffff;
   --overlay-bg: rgba(13, 17, 23, 0.82);
@@ -237,31 +220,11 @@ li:hover {
   background: var(--bg-surface-hover);
 }
 
-/* ── GitHub Diff Highlighting ── */
-#active-list > li {
-  border-left: 3px solid var(--diff-add-border);
-  background: var(--diff-add-bg);
-  padding-left: calc(var(--space-lg) - 3px);
-}
-
-#active-list > li:hover {
-  background: var(--diff-add-hover);
-}
-
-#completed-list > li {
-  border-left: 3px solid var(--diff-del-border);
-  background: var(--diff-del-bg);
-  padding-left: calc(var(--space-lg) - 3px);
-}
-
-#completed-list > li:hover {
-  background: var(--diff-del-hover);
-}
-
+/* ── Completed Items ── */
 #completed-list > li.completed > .item-row label .item-text {
   text-decoration: line-through;
-  text-decoration-color: var(--diff-del-border);
-  color: var(--diff-del-text);
+  text-decoration-color: var(--text-muted);
+  color: var(--text-muted);
 }
 
 /* Staggered entrance animation */
@@ -333,22 +296,6 @@ li input[type="checkbox"]:checked::after {
   border-width: 0 1.5px 1.5px 0;
   transform: rotate(45deg);
   animation: check-draw var(--duration-normal) var(--ease-out);
-}
-
-/* Completed list checkboxes use red diff color */
-#completed-list li input[type="checkbox"]:checked {
-  background: var(--diff-del-border);
-  border-color: var(--diff-del-border);
-}
-
-/* Active list checkbox hover uses green */
-#active-list li input[type="checkbox"]:hover {
-  border-color: var(--diff-add-border);
-  background: rgba(45, 164, 78, 0.1);
-}
-
-[data-theme="dark"] #active-list li input[type="checkbox"]:hover {
-  background: rgba(63, 185, 80, 0.15);
 }
 
 @keyframes checkbox-pop {
@@ -826,6 +773,47 @@ textarea::placeholder {
   background: var(--accent);
   border-radius: 50%;
   animation: dot-pulse 1.4s ease-in-out infinite;
+}
+
+/* ── Drag and Drop ── */
+#active-list > li[draggable="true"] {
+  cursor: grab;
+}
+
+#active-list > li[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+li.dragging {
+  opacity: 0.3;
+}
+
+li.drop-target {
+  outline: 2px dashed var(--accent);
+  outline-offset: -2px;
+  background: var(--accent-subtle) !important;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Undo Button ── */
+#undo-btn {
+  -webkit-app-region: no-drag;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  margin-right: var(--space-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  transition: color var(--duration-fast), background var(--duration-fast);
+}
+
+#undo-btn:hover {
+  color: var(--text-primary);
+  background: var(--bg-surface-hover);
 }
 
 /* ── Custom Confirm Dialog ── */

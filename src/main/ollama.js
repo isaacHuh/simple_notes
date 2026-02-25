@@ -1,54 +1,16 @@
 const DEFAULT_URL = 'http://localhost:11434';
 
-const SYSTEM_PROMPT = `You are a task organization assistant. Given a note from the user, convert it into checklist items and merge with any existing items.
+const SYSTEM_PROMPT = `You are a task organization assistant. Convert the user's note into checklist items.
 
-CRITICAL RULES — existing items:
-- When existing items are provided, you MUST reproduce ALL of them EXACTLY as-is — same text, same structure, same checked/unchecked state.
-- NEVER remove, rename, reorganize, reword, or re-nest existing items.
-- NEVER demote an existing top-level item into a sub-item of another task.
-- Existing items are IMMUTABLE. Your only job is to add the new note into the list.
-
-Rules for adding new notes:
+Rules:
 - Return ONLY a markdown checklist, no other text.
 - Use "- [ ] " for top-level items.
-- Use "  - [ ] " (2-space indent) for actionable sub-tasks nested under a parent.
-- Use "  - " (2-space indent, NO checkbox) for non-actionable context or extra info about a parent item.
-- Notes are often shorthand or contextual. Infer what the user means from the existing tasks. For example, if "temporal refactors" is submitted and there is an existing task about code changes or a related project, add it as a sub-item or context note to that task.
-- If the new note clearly relates to an existing task, add it as a sub-item under that task.
-- If the new note does NOT relate to any existing task, add it as a new top-level item.
-- NEVER group unrelated existing tasks under a new parent.
-- Use concise, actionable language for tasks.
+- Use "  - [ ] " (2-space indent) for actionable sub-tasks.
+- Use "  - " (2-space indent, NO checkbox) for non-actionable context or notes about a parent item.
+- Use concise, actionable language.
 - Support **bold** for emphasis on key words when helpful.
-
-Example — adding to existing items:
-
-Existing items:
-- [ ] **Grocery shopping**
-  - [ ] Buy milk and eggs
-- [ ] **Refactor auth service**
-  - [ ] Update token validation
-
-New note: add rate limiting
-
-Correct output:
-- [ ] **Grocery shopping**
-  - [ ] Buy milk and eggs
-- [ ] **Refactor auth service**
-  - [ ] Update token validation
-  - [ ] Add rate limiting
-
-Example — unrelated new note:
-
-Existing items:
-- [ ] **Grocery shopping**
-  - [ ] Buy milk and eggs
-
-New note: schedule dentist appointment
-
-Correct output:
-- [ ] **Grocery shopping**
-  - [ ] Buy milk and eggs
-- [ ] **Schedule dentist appointment**`;
+- If the note contains multiple distinct tasks, create separate top-level items for each.
+- If the note is a single task with multiple details, create one top-level item with sub-items.`;
 
 const TASK_CONTEXT_PROMPT = `You are a task organization assistant. You will be given a single parent task with its existing sub-items, plus a new note to incorporate into that task.
 
@@ -76,6 +38,19 @@ Example output:
 - Due by end of week
 - [ ] Send calendar invite to the team`;
 
+const MERGE_PROMPT = `You are a task organization assistant. Merge two task trees into a single, unified task tree.
+
+Rules:
+- Return ONLY a markdown checklist for the merged task, no other text.
+- Create ONE parent item using "- [ ] " that best describes the combined scope.
+- Merge duplicate or very similar sub-items into one.
+- Preserve all unique sub-items and context notes from both tasks.
+- Use "  - [ ] " (2-space indent) for actionable sub-tasks.
+- Use "  - " (2-space indent, NO checkbox) for context notes.
+- Use concise language.
+- Support **bold** for emphasis.
+- Preserve checked state: use "- [x] " or "  - [x] " for items that were already checked.`;
+
 function serializeChildren(children) {
   return children.map((child) => {
     if (child.isContext) {
@@ -85,20 +60,18 @@ function serializeChildren(children) {
   }).join('\n');
 }
 
-function serializeItems(items) {
-  return items.map((item) => {
-    let line = `- [${item.completed ? 'x' : ' '}] ${item.text}`;
-    if (item.children && item.children.length > 0) {
-      for (const child of item.children) {
-        if (child.isContext) {
-          line += `\n  - ${child.text}`;
-        } else {
-          line += `\n  - [${child.completed ? 'x' : ' '}] ${child.text}`;
-        }
+function serializeTask(task) {
+  let line = `- [${task.completed ? 'x' : ' '}] ${task.text}`;
+  if (task.children && task.children.length > 0) {
+    for (const child of task.children) {
+      if (child.isContext) {
+        line += `\n  - ${child.text}`;
+      } else {
+        line += `\n  - [${child.completed ? 'x' : ' '}] ${child.text}`;
       }
     }
-    return line;
-  }).join('\n');
+  }
+  return line;
 }
 
 async function callOllama(systemPrompt, userMessage, model = 'qwen2.5:7b', baseUrl = DEFAULT_URL) {
@@ -124,13 +97,8 @@ async function callOllama(systemPrompt, userMessage, model = 'qwen2.5:7b', baseU
   return data.message.content;
 }
 
-async function processNote(text, existingItems, model = 'qwen2.5:7b', baseUrl = DEFAULT_URL) {
-  let userMessage = '';
-  if (existingItems && existingItems.length > 0) {
-    userMessage += 'Existing items (reproduce these EXACTLY, do NOT restructure):\n' + serializeItems(existingItems) + '\n\n';
-  }
-  userMessage += 'New note: ' + text;
-  return callOllama(SYSTEM_PROMPT, userMessage, model, baseUrl);
+async function processNote(text, model = 'qwen2.5:7b', baseUrl = DEFAULT_URL) {
+  return callOllama(SYSTEM_PROMPT, text, model, baseUrl);
 }
 
 async function processTaskContext(parentText, existingChildren, noteText, model = 'qwen2.5:7b', baseUrl = DEFAULT_URL) {
@@ -140,6 +108,11 @@ async function processTaskContext(parentText, existingChildren, noteText, model 
   }
   userMessage += `\nNew note: ${noteText}`;
   return callOllama(TASK_CONTEXT_PROMPT, userMessage, model, baseUrl);
+}
+
+async function mergeTasks(taskA, taskB, model = 'qwen2.5:7b', baseUrl = DEFAULT_URL) {
+  const userMessage = `Task A:\n${serializeTask(taskA)}\n\nTask B:\n${serializeTask(taskB)}`;
+  return callOllama(MERGE_PROMPT, userMessage, model, baseUrl);
 }
 
 async function healthCheck(baseUrl = DEFAULT_URL) {
@@ -158,4 +131,4 @@ async function listModels(baseUrl = DEFAULT_URL) {
   return data.models.map((m) => m.name);
 }
 
-module.exports = { processNote, processTaskContext, healthCheck, listModels };
+module.exports = { processNote, processTaskContext, mergeTasks, healthCheck, listModels };
