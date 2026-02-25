@@ -282,7 +282,6 @@ li input[type="checkbox"]:hover {
 li input[type="checkbox"]:checked {
   background: var(--accent);
   border-color: var(--accent);
-  animation: checkbox-pop var(--duration-normal) var(--spring);
 }
 
 li input[type="checkbox"]:checked::after {
@@ -295,6 +294,14 @@ li input[type="checkbox"]:checked::after {
   border: solid var(--checkbox-check);
   border-width: 0 1.5px 1.5px 0;
   transform: rotate(45deg);
+}
+
+/* Only animate on the checkbox the user actually clicked */
+li input[type="checkbox"].just-checked {
+  animation: checkbox-pop var(--duration-normal) var(--spring);
+}
+
+li input[type="checkbox"].just-checked::after {
   animation: check-draw var(--duration-normal) var(--ease-out);
 }
 

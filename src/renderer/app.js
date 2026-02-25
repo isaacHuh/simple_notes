@@ -200,9 +200,18 @@ completedList.addEventListener('change', handleCheckboxChange);
 
 function handleCheckboxChange(e) {
   if (e.target.type !== 'checkbox') return;
-  const li = e.target.closest('li');
+  const checkbox = e.target;
+  const li = checkbox.closest('li');
   if (!li) return;
   const id = li.dataset.id;
+
+  // Play check animation only on the checkbox that was actually clicked
+  if (checkbox.checked) {
+    checkbox.classList.add('just-checked');
+    checkbox.addEventListener('animationend', () => {
+      checkbox.classList.remove('just-checked');
+    }, { once: true });
+  }
 
   const parentLi = li.closest('li:not(.sub-item)');
   if (li.classList.contains('sub-item') && parentLi) {
@@ -211,7 +220,7 @@ function handleCheckboxChange(e) {
     if (parent && parent.children) {
       const child = parent.children.find((c) => c.id === id);
       if (child) {
-        child.completed = e.target.checked;
+        child.completed = checkbox.checked;
         save();
         renderChecklist();
         return;
@@ -221,7 +230,7 @@ function handleCheckboxChange(e) {
 
   const item = appData.items.find((i) => i.id === id);
   if (item) {
-    item.completed = e.target.checked;
+    item.completed = checkbox.checked;
     save();
     renderChecklist();
   }
