@@ -1,5 +1,7 @@
 # SimpleNotes
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 A menu bar app that turns freeform notes into actionable checklists using a local AI model (Ollama + Qwen). Lives in your menu bar, no cloud required. Works on **macOS** and **Windows**.
 
 ## Prerequisites
@@ -144,3 +146,11 @@ Output goes to the `dist/` directory.
 - **Qwen 3 8B** — language model for task extraction
 - **electron-builder** — packaging for macOS (DMG) and Windows (NSIS)
 - Vanilla HTML/CSS/JS — no frontend framework
+
+## Contributing
+
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).

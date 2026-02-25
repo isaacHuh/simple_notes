@@ -3,6 +3,26 @@
   "productName": "Sticky",
   "version": "1.0.0",
   "description": "A menu bar note-taking app with local AI powered by Ollama",
+  "license": "MIT",
+  "author": "isaacHuh",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/isaacHuh/simple_notes.git"
+  },
+  "bugs": {
+    "url": "https://github.com/isaacHuh/simple_notes/issues"
+  },
+  "homepage": "https://github.com/isaacHuh/simple_notes#readme",
+  "keywords": [
+    "notes",
+    "menubar",
+    "electron",
+    "ollama",
+    "ai",
+    "checklist",
+    "productivity",
+    "local-ai"
+  ],
   "main": "src/main/index.js",
   "scripts": {
     "start": "electron .",
