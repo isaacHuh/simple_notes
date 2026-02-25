@@ -635,18 +635,48 @@ li.task-item:hover .task-context-btn {
   font-size: 11px;
 }
 
-/* ── Sub-items ── */
+/* ── Sub-items with tree lines ── */
 .sub-list {
   margin-left: 24px;
   margin-top: 4px;
   padding: 0;
+  position: relative;
 }
 
 .sub-list li.sub-item {
-  padding: 3px 0;
+  padding: 3px 0 3px 18px;
   margin: 0;
   border-radius: 0;
   background: transparent;
+  position: relative;
+}
+
+/* Vertical tree line — runs full height of each item */
+.sub-list li.sub-item::before {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+}
+
+/* Horizontal connector — branch to each item */
+.sub-list li.sub-item::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 11px;
+  width: 9px;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Last item: vertical line stops at the connector (└ shape) */
+.sub-list li.sub-item:last-child::before {
+  bottom: auto;
+  height: 12px;
 }
 
 .sub-list li.sub-item:hover {
@@ -685,10 +715,6 @@ li.task-item:hover .task-context-btn {
   text-decoration: line-through;
   text-decoration-color: var(--text-dim);
   color: var(--completed-text);
-}
-
-.sub-list li.sub-item.context-note {
-  padding-left: 20px;
 }
 
 .sub-list li.sub-item.context-note .context-text {
