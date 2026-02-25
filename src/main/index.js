@@ -1,4 +1,4 @@
-const { app, ipcMain, Menu } = require('electron');
+const { app, ipcMain, Menu, shell } = require('electron');
 const { menubar } = require('menubar');
 const path = require('path');
 const store = require('./store');
@@ -113,6 +113,57 @@ ipcMain.on('resize-window', (_event, height) => {
     const clamped = Math.min(Math.max(Math.round(height), 120), 600);
     win.setSize(width, clamped);
   }
+});
+
+ipcMain.on('open-external', (_event, url) => {
+  shell.openExternal(url);
+});
+
+ipcMain.handle('pull-model', async (_event, model) => {
+  const data = store.loadData();
+  const baseUrl = data.settings.ollamaUrl || 'http://localhost:11434';
+  const res = await fetch(`${baseUrl}/api/pull`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: model, stream: true }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Pull failed (${res.status}): ${text}`);
+  }
+
+  const win = mb.window;
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    const lines = buffer.split('\n');
+    buffer = lines.pop();
+
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      try {
+        const json = JSON.parse(line);
+        if (win && !win.isDestroyed()) {
+          win.webContents.send('pull-progress', json);
+        }
+      } catch {
+        // skip malformed lines
+      }
+    }
+  }
+
+  return true;
+});
+
+ipcMain.handle('get-platform', () => {
+  return process.platform;
 });
 
 app.on('window-all-closed', (e) => {

@@ -9,6 +9,12 @@ contextBridge.exposeInMainWorld('api', {
     ipcRenderer.invoke('process-task-context', parentText, existingChildren, noteText),
   checkOllama: () => ipcRenderer.invoke('check-ollama'),
   listModels: () => ipcRenderer.invoke('list-models'),
+  pullModel: (model) => ipcRenderer.invoke('pull-model', model),
+  getPlatform: () => ipcRenderer.invoke('get-platform'),
+  openExternal: (url) => ipcRenderer.send('open-external', url),
+  onPullProgress: (callback) => {
+    ipcRenderer.on('pull-progress', (_event, data) => callback(data));
+  },
   hideWindow: () => ipcRenderer.send('hide-window'),
   resizeWindow: (height) => ipcRenderer.send('resize-window', height),
 });

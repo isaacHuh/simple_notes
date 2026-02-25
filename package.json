@@ -2,11 +2,13 @@
   "name": "simple-notes",
   "productName": "NoteFlow",
   "version": "1.0.0",
-  "description": "A macOS menu bar note-taking app with local AI powered by Ollama",
+  "description": "A menu bar note-taking app with local AI powered by Ollama",
   "main": "src/main/index.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder --mac"
+    "build": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "build:all": "electron-builder --mac --win"
   },
   "dependencies": {
     "menubar": "^9.4.0"
@@ -24,6 +26,14 @@
       "target": ["dmg", "zip"],
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "win": {
+      "icon": "assets/icon.png",
+      "target": ["nsis", "zip"]
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false
     },
     "files": [
       "src/**/*",

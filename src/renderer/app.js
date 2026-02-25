@@ -40,6 +40,165 @@ const ICON_PLUS = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
   <path d="M6 2v8M2 6h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
 </svg>`;
 
+// ---- Setup Wizard ----
+const setupWizard = document.getElementById('setup-wizard');
+const stepInstall = document.getElementById('step-install');
+const stepInstallHint = document.getElementById('step-install-hint');
+const stepInstallActions = document.getElementById('step-install-actions');
+const stepModel = document.getElementById('step-model');
+const stepModelLabel = document.getElementById('step-model-label');
+const stepModelHint = document.getElementById('step-model-hint');
+const stepModelActions = document.getElementById('step-model-actions');
+const stepModelProgress = document.getElementById('step-model-progress');
+const pullProgressFill = document.getElementById('pull-progress-fill');
+const pullProgressText = document.getElementById('pull-progress-text');
+const setupFooter = document.getElementById('setup-footer');
+
+function setStepStatus(stepEl, status) {
+  stepEl.dataset.status = status;
+  const checking = stepEl.querySelector('.step-checking');
+  const pass = stepEl.querySelector('.step-pass');
+  const fail = stepEl.querySelector('.step-fail');
+  const waiting = stepEl.querySelector('.step-waiting');
+
+  [checking, pass, fail, waiting].forEach((el) => { if (el) el.classList.add('hidden'); });
+
+  if (status === 'checking' && checking) checking.classList.remove('hidden');
+  else if (status === 'pass' && pass) pass.classList.remove('hidden');
+  else if (status === 'fail' && fail) fail.classList.remove('hidden');
+  else if (status === 'waiting' && waiting) waiting.classList.remove('hidden');
+}
+
+async function runSetupCheck() {
+  const model = appData.settings.ollamaModel || 'qwen3:8b';
+  stepModelLabel.textContent = `Model ready (${model})`;
+
+  // Step 1: Check Ollama server
+  setStepStatus(stepInstall, 'checking');
+  stepInstallHint.classList.add('hidden');
+  stepInstallActions.classList.add('hidden');
+
+  const ollamaOk = await window.api.checkOllama();
+
+  if (ollamaOk) {
+    setStepStatus(stepInstall, 'pass');
+    stepInstallHint.classList.add('hidden');
+    stepInstallActions.classList.add('hidden');
+  } else {
+    setStepStatus(stepInstall, 'fail');
+    stepInstallHint.textContent = 'Download and open Ollama to continue';
+    stepInstallHint.classList.remove('hidden');
+    stepInstallActions.classList.remove('hidden');
+    // Reset model step to waiting
+    setStepStatus(stepModel, 'waiting');
+    stepModelHint.classList.add('hidden');
+    stepModelActions.classList.add('hidden');
+    stepModelProgress.classList.add('hidden');
+    setupFooter.classList.add('hidden');
+    return;
+  }
+
+  // Step 2: Check if model is available
+  setStepStatus(stepModel, 'checking');
+  stepModelHint.classList.add('hidden');
+  stepModelActions.classList.add('hidden');
+
+  try {
+    const models = await window.api.listModels();
+    const hasModel = models.some((m) => m === model || m.startsWith(model.split(':')[0] + ':'));
+
+    if (hasModel) {
+      setStepStatus(stepModel, 'pass');
+      setupFooter.classList.remove('hidden');
+    } else {
+      setStepStatus(stepModel, 'fail');
+      stepModelHint.textContent = `"${model}" is not downloaded yet`;
+      stepModelHint.classList.remove('hidden');
+      stepModelActions.classList.remove('hidden');
+      setupFooter.classList.add('hidden');
+    }
+  } catch {
+    setStepStatus(stepModel, 'fail');
+    stepModelHint.textContent = 'Could not check models';
+    stepModelHint.classList.remove('hidden');
+    stepModelActions.classList.remove('hidden');
+    setupFooter.classList.add('hidden');
+  }
+}
+
+async function needsSetup() {
+  try {
+    const ollamaOk = await window.api.checkOllama();
+    if (!ollamaOk) return true;
+
+    const model = appData.settings.ollamaModel || 'qwen3:8b';
+    const models = await window.api.listModels();
+    return !models.some((m) => m === model || m.startsWith(model.split(':')[0] + ':'));
+  } catch {
+    return true;
+  }
+}
+
+document.getElementById('btn-download-ollama').addEventListener('click', async () => {
+  const platform = await window.api.getPlatform();
+  const url = platform === 'win32'
+    ? 'https://ollama.com/download/windows'
+    : 'https://ollama.com/download/mac';
+  window.api.openExternal(url);
+});
+
+document.getElementById('btn-recheck-ollama').addEventListener('click', () => {
+  runSetupCheck();
+});
+
+document.getElementById('btn-pull-model').addEventListener('click', async () => {
+  const model = appData.settings.ollamaModel || 'qwen3:8b';
+  stepModelActions.classList.add('hidden');
+  stepModelHint.classList.add('hidden');
+  stepModelProgress.classList.remove('hidden');
+  setStepStatus(stepModel, 'checking');
+  pullProgressFill.style.width = '0%';
+  pullProgressText.textContent = 'Starting download...';
+
+  try {
+    await window.api.pullModel(model);
+    setStepStatus(stepModel, 'pass');
+    stepModelProgress.classList.add('hidden');
+    setupFooter.classList.remove('hidden');
+  } catch (err) {
+    setStepStatus(stepModel, 'fail');
+    stepModelProgress.classList.add('hidden');
+    stepModelHint.textContent = `Pull failed: ${err.message}`;
+    stepModelHint.classList.remove('hidden');
+    stepModelActions.classList.remove('hidden');
+  }
+});
+
+window.api.onPullProgress((data) => {
+  if (data.total && data.completed) {
+    const pct = Math.round((data.completed / data.total) * 100);
+    pullProgressFill.style.width = `${pct}%`;
+    const mb = (n) => (n / 1024 / 1024).toFixed(0);
+    pullProgressText.textContent = `${data.status || 'Downloading'}... ${mb(data.completed)} / ${mb(data.total)} MB (${pct}%)`;
+  } else if (data.status) {
+    pullProgressText.textContent = data.status;
+  }
+});
+
+document.getElementById('btn-setup-done').addEventListener('click', () => {
+  setupWizard.classList.add('hidden');
+  appData.settings.setupComplete = true;
+  save();
+  adjustWindowHeight();
+});
+
+document.getElementById('btn-setup-skip').addEventListener('click', () => {
+  setupWizard.classList.add('hidden');
+  appData.settings.setupComplete = true;
+  save();
+  adjustWindowHeight();
+});
+
 // ---- Initialization ----
 async function init() {
   appData = await window.api.loadData();
@@ -51,6 +210,12 @@ async function init() {
   updateUndoButton();
   updateRedoButton();
   checkOllamaStatus();
+
+  // Show setup wizard on first launch or if Ollama/model is missing
+  if (!appData.settings.setupComplete || await needsSetup()) {
+    setupWizard.classList.remove('hidden');
+    runSetupCheck();
+  }
 }
 
 // ---- Theme ----

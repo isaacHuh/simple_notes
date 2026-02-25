@@ -114,6 +114,76 @@
     </button>
   </div>
 
+  <!-- Setup wizard overlay -->
+  <div id="setup-wizard" class="hidden">
+    <div class="setup-content">
+      <div class="setup-header">
+        <span class="setup-title">Welcome to Sticky</span>
+        <span class="setup-subtitle">Let's get your local AI set up</span>
+      </div>
+
+      <div class="setup-steps">
+        <!-- Step 1: Install Ollama -->
+        <div class="setup-step" id="step-install" data-status="checking">
+          <div class="step-indicator">
+            <div class="step-icon step-checking">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="7" cy="7" r="5.5" opacity="0.3"/></svg>
+            </div>
+            <div class="step-icon step-pass hidden">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5L5.5 10L11 4"/></svg>
+            </div>
+            <div class="step-icon step-fail hidden">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5"/></svg>
+            </div>
+          </div>
+          <div class="step-body">
+            <span class="step-label">Ollama installed &amp; running</span>
+            <span class="step-hint hidden" id="step-install-hint">Download and open Ollama to continue</span>
+            <div class="step-actions hidden" id="step-install-actions">
+              <button class="setup-btn" id="btn-download-ollama">Download Ollama</button>
+              <button class="setup-btn-text" id="btn-recheck-ollama">Check again</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Pull model -->
+        <div class="setup-step" id="step-model" data-status="waiting">
+          <div class="step-indicator">
+            <div class="step-icon step-checking hidden">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="7" cy="7" r="5.5" opacity="0.3"/></svg>
+            </div>
+            <div class="step-icon step-pass hidden">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5L5.5 10L11 4"/></svg>
+            </div>
+            <div class="step-icon step-fail hidden">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5"/></svg>
+            </div>
+            <div class="step-icon step-waiting">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity="0.25"><circle cx="7" cy="7" r="5.5"/></svg>
+            </div>
+          </div>
+          <div class="step-body">
+            <span class="step-label" id="step-model-label">Model ready</span>
+            <span class="step-hint hidden" id="step-model-hint"></span>
+            <div class="step-progress hidden" id="step-model-progress">
+              <div class="progress-bar"><div class="progress-fill" id="pull-progress-fill"></div></div>
+              <span class="progress-text" id="pull-progress-text">Downloading...</span>
+            </div>
+            <div class="step-actions hidden" id="step-model-actions">
+              <button class="setup-btn" id="btn-pull-model">Pull Model</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="setup-footer hidden" id="setup-footer">
+        <button class="setup-btn-primary" id="btn-setup-done">Get Started</button>
+      </div>
+
+      <button class="setup-skip" id="btn-setup-skip">Skip setup</button>
+    </div>
+  </div>
+
   <!-- Loading overlay (used only for task context processing) -->
   <div id="loading-overlay" class="hidden">
     <div class="loading-dots">
