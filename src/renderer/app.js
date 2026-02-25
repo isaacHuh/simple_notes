@@ -1,5 +1,7 @@
 // ---- State ----
 let appData = { items: [], settings: {} };
+let noteQueue = [];
+let isProcessing = false;
 
 // ---- DOM References ----
 const activeList = document.getElementById('active-list');
@@ -14,6 +16,12 @@ const errorBanner = document.getElementById('error-banner');
 const errorMessage = document.getElementById('error-message');
 const errorDismiss = document.getElementById('error-dismiss');
 const loadingOverlay = document.getElementById('loading-overlay');
+const themeToggle = document.getElementById('theme-toggle');
+const queueIndicator = document.getElementById('queue-indicator');
+const confirmDialog = document.getElementById('confirm-dialog');
+const confirmMessage = document.getElementById('confirm-message');
+const confirmOkBtn = document.getElementById('confirm-ok');
+const confirmCancelBtn = document.getElementById('confirm-cancel');
 
 // ---- SVG Icons ----
 const ICON_PLUS = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -23,8 +31,47 @@ const ICON_PLUS = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
 // ---- Initialization ----
 async function init() {
   appData = await window.api.loadData();
+  applyTheme(appData.settings.theme || 'light');
   renderChecklist(true);
   checkOllamaStatus();
+}
+
+// ---- Theme ----
+function applyTheme(theme) {
+  document.documentElement.setAttribute('data-theme', theme);
+}
+
+themeToggle.addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  applyTheme(next);
+  appData.settings.theme = next;
+  save();
+});
+
+// ---- Custom Confirm Dialog ----
+function showConfirm(message) {
+  return new Promise((resolve) => {
+    confirmMessage.textContent = message;
+    confirmDialog.classList.remove('hidden');
+
+    function handleOk() {
+      cleanup();
+      resolve(true);
+    }
+    function handleCancel() {
+      cleanup();
+      resolve(false);
+    }
+    function cleanup() {
+      confirmOkBtn.removeEventListener('click', handleOk);
+      confirmCancelBtn.removeEventListener('click', handleCancel);
+      confirmDialog.classList.add('hidden');
+    }
+
+    confirmOkBtn.addEventListener('click', handleOk);
+    confirmCancelBtn.addEventListener('click', handleCancel);
+  });
 }
 
 // ---- Markdown Rendering ----
@@ -156,7 +203,7 @@ function handleCheckboxChange(e) {
 activeList.addEventListener('contextmenu', handleItemContextMenu);
 completedList.addEventListener('contextmenu', handleItemContextMenu);
 
-function handleItemContextMenu(e) {
+async function handleItemContextMenu(e) {
   const li = e.target.closest('li');
   if (!li) return;
   e.preventDefault();
@@ -170,7 +217,7 @@ function handleItemContextMenu(e) {
       const parent = appData.items.find((i) => i.id === parentId);
       if (parent && parent.children) {
         const child = parent.children.find((c) => c.id === id);
-        if (child && confirm(`Delete "${child.text}"?`)) {
+        if (child && await showConfirm(`Delete "${child.text}"?`)) {
           parent.children = parent.children.filter((c) => c.id !== id);
           save();
           renderChecklist();
@@ -181,7 +228,7 @@ function handleItemContextMenu(e) {
   }
 
   const item = appData.items.find((i) => i.id === id);
-  if (item && confirm(`Delete "${item.text}"?`)) {
+  if (item && await showConfirm(`Delete "${item.text}"?`)) {
     appData.items = appData.items.filter((i) => i.id !== id);
     save();
     renderChecklist();
@@ -278,16 +325,16 @@ completedToggle.addEventListener('click', () => {
 });
 
 // Clear completed
-clearCompletedBtn.addEventListener('click', () => {
+clearCompletedBtn.addEventListener('click', async () => {
   const count = appData.items.filter((i) => i.completed).length;
-  if (confirm(`Clear ${count} completed item${count !== 1 ? 's' : ''}?`)) {
+  if (await showConfirm(`Clear ${count} completed item${count !== 1 ? 's' : ''}?`)) {
     appData.items = appData.items.filter((i) => !i.completed);
     save();
     renderChecklist();
   }
 });
 
-// Enter to submit, Shift+Enter for new line
+// ---- Async Note Queue ----
 noteInput.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
@@ -295,37 +342,65 @@ noteInput.addEventListener('keydown', (e) => {
   }
 });
 
-async function handleSubmit() {
+function handleSubmit() {
   const noteText = noteInput.value.trim();
   if (!noteText) return;
 
-  showLoading(true);
-  noteInput.disabled = true;
+  // Immediately clear input and enqueue
+  noteInput.value = '';
+  noteInput.focus();
+  noteQueue.push(noteText);
+  updateQueueIndicator();
+  processQueue();
+}
 
-  try {
-    const newItems = await window.api.processNote(noteText);
-    if (newItems.length === 0) {
-      showError('Could not extract any checklist items. Try rephrasing your note.');
-    } else {
-      // Replace all items with the merged result from the LLM
-      appData.items = newItems;
-      await save();
-      renderChecklist(true);
-      noteInput.value = '';
+async function processQueue() {
+  if (isProcessing || noteQueue.length === 0) return;
+
+  isProcessing = true;
+  updateQueueIndicator();
+
+  while (noteQueue.length > 0) {
+    const noteText = noteQueue.shift();
+    updateQueueIndicator();
+
+    try {
+      const newItems = await window.api.processNote(noteText);
+      if (newItems.length === 0) {
+        showError('Could not extract any checklist items. Try rephrasing your note.');
+      } else {
+        appData.items = newItems;
+        await save();
+        renderChecklist(true);
+      }
+    } catch (err) {
+      if (err.message.includes('fetch') || err.message.includes('ECONNREFUSED')) {
+        showError('Ollama is not running. Start it with: ollama serve');
+      } else if (err.message.includes('404') || err.message.includes('not found')) {
+        const model = appData.settings.ollamaModel || 'qwen2.5:7b';
+        showError(`Model not found. Run: ollama pull ${model}`);
+      } else {
+        showError(err.message);
+      }
     }
-  } catch (err) {
-    if (err.message.includes('fetch') || err.message.includes('ECONNREFUSED')) {
-      showError('Ollama is not running. Start it with: ollama serve');
-    } else if (err.message.includes('404') || err.message.includes('not found')) {
-      const model = appData.settings.ollamaModel || 'qwen2.5:7b';
-      showError(`Model not found. Run: ollama pull ${model}`);
-    } else {
-      showError(err.message);
-    }
-  } finally {
-    showLoading(false);
-    noteInput.disabled = false;
-    noteInput.focus();
+  }
+
+  isProcessing = false;
+  updateQueueIndicator();
+}
+
+function updateQueueIndicator() {
+  const pending = noteQueue.length;
+  const total = pending + (isProcessing ? 1 : 0);
+
+  if (total > 0) {
+    const label = total === 1
+      ? 'Processing note...'
+      : `Processing note... (${pending} queued)`;
+    queueIndicator.textContent = label;
+    queueIndicator.classList.remove('hidden');
+  } else {
+    queueIndicator.classList.add('hidden');
   }
 }
 

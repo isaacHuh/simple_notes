@@ -25,6 +25,15 @@
       <circle cx="11" cy="11" r="1" fill="currentColor"/>
     </svg>
     <span class="title">SimpleNotes</span>
+    <button id="theme-toggle" title="Toggle theme">
+      <svg class="icon-moon" width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M7 2a5 5 0 104.33 7.5A3.88 3.88 0 017 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
+      </svg>
+      <svg class="icon-sun" width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <circle cx="7" cy="7" r="2.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+        <path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.76 2.76l1.41 1.41M9.83 9.83l1.41 1.41M11.24 2.76l-1.41 1.41M4.17 9.83l-1.41 1.41" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
     <div id="status-indicator" class="status-dot offline" title="Ollama: checking..."></div>
   </div>
 
@@ -59,6 +68,7 @@
   <!-- Input area -->
   <div id="input-section">
     <textarea id="note-input" placeholder="What's on your mind?" rows="3"></textarea>
+    <div id="queue-indicator" class="hidden"></div>
   </div>
 
   <!-- Error banner -->
@@ -71,7 +81,7 @@
     </button>
   </div>
 
-  <!-- Loading overlay -->
+  <!-- Loading overlay (used only for task context processing) -->
   <div id="loading-overlay" class="hidden">
     <div class="loading-dots">
       <span></span>
@@ -79,6 +89,18 @@
       <span></span>
     </div>
     <span class="loading-text">Processing with Ollama</span>
+  </div>
+
+  <!-- Custom confirm dialog (no icon) -->
+  <div id="confirm-dialog" class="hidden">
+    <div class="confirm-backdrop"></div>
+    <div class="confirm-card">
+      <p id="confirm-message"></p>
+      <div class="confirm-actions">
+        <button id="confirm-cancel">Cancel</button>
+        <button id="confirm-ok">OK</button>
+      </div>
+    </div>
   </div>
 
   <script src="app.js"></script>

@@ -22,7 +22,7 @@ const mb = menubar({
     resizable: false,
     alwaysOnTop: true,
     skipTaskbar: true,
-    backgroundColor: '#0c0c10',
+    backgroundColor: '#ffffff',
     webPreferences: {
       preload: path.join(__dirname, '../preload/preload.js'),
       contextIsolation: true,
