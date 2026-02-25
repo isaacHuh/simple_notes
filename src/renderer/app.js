@@ -9,9 +9,6 @@ const completedCount = document.getElementById('completed-count');
 const completedToggle = document.getElementById('completed-toggle');
 const clearCompletedBtn = document.getElementById('clear-completed');
 const noteInput = document.getElementById('note-input');
-const contextInput = document.getElementById('context-input');
-const contextSection = document.getElementById('context-section');
-const addContextBtn = document.getElementById('add-context-btn');
 const submitBtn = document.getElementById('submit-btn');
 const statusIndicator = document.getElementById('status-indicator');
 const errorBanner = document.getElementById('error-banner');
@@ -68,6 +65,11 @@ function createItemHTML(item, isCompleted) {
   let childrenHTML = '';
   if (item.children && item.children.length > 0) {
     const childItems = item.children.map((child) => {
+      if (child.isContext) {
+        return `<li data-id="${child.id}" class="sub-item context-note">
+          <span class="context-text">${renderMarkdown(child.text)}</span>
+        </li>`;
+      }
       return `<li data-id="${child.id}" class="sub-item ${child.completed ? 'completed' : ''}">
         <label>
           <input type="checkbox" ${child.completed ? 'checked' : ''}>
@@ -78,12 +80,26 @@ function createItemHTML(item, isCompleted) {
     childrenHTML = `<ul class="sub-list">${childItems}</ul>`;
   }
 
+  const addContextBtn = !isCompleted
+    ? `<button class="task-context-btn" data-id="${item.id}" title="Add context to this task">+</button>`
+    : '';
+
   return `<li data-id="${item.id}" class="${isCompleted ? 'completed' : ''}">
-      <label>
-        <input type="checkbox" ${item.completed ? 'checked' : ''}>
-        <span class="item-text">${renderMarkdown(item.text)}</span>
-      </label>
+      <div class="item-row">
+        <label>
+          <input type="checkbox" ${item.completed ? 'checked' : ''}>
+          <span class="item-text">${renderMarkdown(item.text)}</span>
+        </label>
+        ${addContextBtn}
+      </div>
       ${childrenHTML}
+      <div class="task-context-input hidden" data-for="${item.id}">
+        <textarea placeholder="Add context to this task..." rows="2"></textarea>
+        <div class="task-context-actions">
+          <button class="task-context-cancel text-button">Cancel</button>
+          <button class="task-context-submit primary-button">Add</button>
+        </div>
+      </div>
     </li>`;
 }
 
@@ -159,6 +175,88 @@ function handleItemContextMenu(e) {
   }
 }
 
+// Per-task context button (event delegation)
+activeList.addEventListener('click', (e) => {
+  // Open inline context input
+  const ctxBtn = e.target.closest('.task-context-btn');
+  if (ctxBtn) {
+    e.preventDefault();
+    const taskId = ctxBtn.dataset.id;
+    const inputDiv = activeList.querySelector(`.task-context-input[data-for="${taskId}"]`);
+    if (inputDiv) {
+      inputDiv.classList.remove('hidden');
+      inputDiv.querySelector('textarea').focus();
+    }
+    return;
+  }
+
+  // Cancel
+  if (e.target.closest('.task-context-cancel')) {
+    const inputDiv = e.target.closest('.task-context-input');
+    if (inputDiv) {
+      inputDiv.classList.add('hidden');
+      inputDiv.querySelector('textarea').value = '';
+    }
+    return;
+  }
+
+  // Submit context for a specific task
+  const submitBtnEl = e.target.closest('.task-context-submit');
+  if (submitBtnEl) {
+    const inputDiv = e.target.closest('.task-context-input');
+    const taskId = inputDiv.dataset.for;
+    const textarea = inputDiv.querySelector('textarea');
+    const text = textarea.value.trim();
+    if (text) {
+      handleTaskContext(taskId, text);
+    }
+    return;
+  }
+});
+
+// Allow Ctrl/Cmd+Enter to submit task context
+activeList.addEventListener('keydown', (e) => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    const inputDiv = e.target.closest('.task-context-input');
+    if (inputDiv) {
+      const taskId = inputDiv.dataset.for;
+      const text = e.target.value.trim();
+      if (text) {
+        handleTaskContext(taskId, text);
+      }
+    }
+  }
+});
+
+async function handleTaskContext(taskId, noteText) {
+  const item = appData.items.find((i) => i.id === taskId);
+  if (!item) return;
+
+  showLoading(true);
+
+  try {
+    const updatedChildren = await window.api.processTaskContext(
+      item.text,
+      item.children || [],
+      noteText
+    );
+    item.children = updatedChildren;
+    await save();
+    renderChecklist();
+  } catch (err) {
+    if (err.message.includes('fetch') || err.message.includes('ECONNREFUSED')) {
+      showError('Ollama is not running. Start it with: ollama serve');
+    } else if (err.message.includes('404') || err.message.includes('not found')) {
+      const model = appData.settings.ollamaModel || 'qwen2.5:7b';
+      showError(`Model not found. Run: ollama pull ${model}`);
+    } else {
+      showError(err.message);
+    }
+  } finally {
+    showLoading(false);
+  }
+}
+
 // Toggle completed section
 completedToggle.addEventListener('click', () => {
   completedList.classList.toggle('collapsed');
@@ -176,14 +274,6 @@ clearCompletedBtn.addEventListener('click', () => {
   }
 });
 
-// Add Context toggle
-addContextBtn.addEventListener('click', () => {
-  contextSection.classList.toggle('hidden');
-  if (!contextSection.classList.contains('hidden')) {
-    contextInput.focus();
-  }
-});
-
 // Submit / Process
 submitBtn.addEventListener('click', handleSubmit);
 
@@ -198,12 +288,11 @@ async function handleSubmit() {
   const noteText = noteInput.value.trim();
   if (!noteText) return;
 
-  const context = contextInput.value.trim();
   showLoading(true);
   submitBtn.disabled = true;
 
   try {
-    const newItems = await window.api.processNote(noteText, context);
+    const newItems = await window.api.processNote(noteText);
     if (newItems.length === 0) {
       showError('Could not extract any checklist items. Try rephrasing your note.');
     } else {
@@ -212,8 +301,6 @@ async function handleSubmit() {
       await save();
       renderChecklist();
       noteInput.value = '';
-      contextInput.value = '';
-      contextSection.classList.add('hidden');
     }
   } catch (err) {
     if (err.message.includes('fetch') || err.message.includes('ECONNREFUSED')) {
