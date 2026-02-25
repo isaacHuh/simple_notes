@@ -9,7 +9,6 @@ const completedCount = document.getElementById('completed-count');
 const completedToggle = document.getElementById('completed-toggle');
 const clearCompletedBtn = document.getElementById('clear-completed');
 const noteInput = document.getElementById('note-input');
-const submitBtn = document.getElementById('submit-btn');
 const statusIndicator = document.getElementById('status-indicator');
 const errorBanner = document.getElementById('error-banner');
 const errorMessage = document.getElementById('error-message');
@@ -274,12 +273,10 @@ clearCompletedBtn.addEventListener('click', () => {
   }
 });
 
-// Submit / Process
-submitBtn.addEventListener('click', handleSubmit);
-
-// Allow Ctrl/Cmd+Enter to submit
+// Enter to submit, Shift+Enter for new line
 noteInput.addEventListener('keydown', (e) => {
-  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
     handleSubmit();
   }
 });
@@ -289,7 +286,7 @@ async function handleSubmit() {
   if (!noteText) return;
 
   showLoading(true);
-  submitBtn.disabled = true;
+  noteInput.disabled = true;
 
   try {
     const newItems = await window.api.processNote(noteText);
@@ -313,7 +310,8 @@ async function handleSubmit() {
     }
   } finally {
     showLoading(false);
-    submitBtn.disabled = false;
+    noteInput.disabled = false;
+    noteInput.focus();
   }
 }
 
