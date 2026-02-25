@@ -31,6 +31,7 @@ const historyList = document.getElementById('history-list');
 const historyEmpty = document.getElementById('history-empty');
 const historyClose = document.getElementById('history-close');
 const dragHandle = document.getElementById('drag-handle');
+const clearCompletedBtn = document.getElementById('clear-completed');
 
 // ---- SVG Icons ----
 const ICON_PLUS = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -227,6 +228,7 @@ function renderChecklist(animate = false) {
 
   if (completed.length > 0) {
     document.getElementById('completed-section').style.display = '';
+    clearCompletedBtn.classList.toggle('hidden', completedList.classList.contains('collapsed'));
   } else {
     document.getElementById('completed-section').style.display = 'none';
   }
@@ -530,6 +532,17 @@ async function handleMerge(sourceId, targetId) {
 completedToggle.addEventListener('click', () => {
   completedList.classList.toggle('collapsed');
   completedToggle.classList.toggle('expanded');
+  clearCompletedBtn.classList.toggle('hidden', completedList.classList.contains('collapsed'));
+});
+
+// Clear completed
+clearCompletedBtn.addEventListener('click', async () => {
+  const count = appData.items.filter((i) => i.completed).length;
+  if (await showConfirm(`Clear ${count} completed item${count !== 1 ? 's' : ''}?`)) {
+    appData.items = appData.items.filter((i) => !i.completed);
+    save();
+    renderChecklist();
+  }
 });
 
 // ---- Input Bar ----
