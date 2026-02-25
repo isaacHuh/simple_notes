@@ -1,8 +1,9 @@
 // ---- State ----
-let appData = { items: [], versions: [], settings: {} };
+let appData = { items: [], versions: [], redoVersions: [], settings: {} };
 let noteQueue = [];
 let isProcessing = false;
 let dragSourceId = null;
+let lockedTaskIds = new Set();
 
 // ---- DOM References ----
 const activeList = document.getElementById('active-list');
@@ -32,6 +33,7 @@ const historyEmpty = document.getElementById('history-empty');
 const historyClose = document.getElementById('history-close');
 const dragHandle = document.getElementById('drag-handle');
 const clearCompletedBtn = document.getElementById('clear-completed');
+const redoBtn = document.getElementById('redo-btn');
 
 // ---- SVG Icons ----
 const ICON_PLUS = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -42,10 +44,12 @@ const ICON_PLUS = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
 async function init() {
   appData = await window.api.loadData();
   if (!appData.versions) appData.versions = [];
+  if (!appData.redoVersions) appData.redoVersions = [];
   if (!appData.inputHistory) appData.inputHistory = [];
   applyTheme(appData.settings.theme || 'dark');
   renderChecklist(true);
   updateUndoButton();
+  updateRedoButton();
   checkOllamaStatus();
 }
 
@@ -146,16 +150,40 @@ function pushVersion() {
   if (appData.versions.length > 50) {
     appData.versions = appData.versions.slice(-50);
   }
+  // New action invalidates the redo stack
+  appData.redoVersions = [];
   updateUndoButton();
+  updateRedoButton();
 }
 
 function undo() {
   if (appData.versions.length === 0) return;
+  // Save current state to redo stack before restoring
+  appData.redoVersions.push({
+    items: JSON.parse(JSON.stringify(appData.items)),
+    timestamp: new Date().toISOString(),
+  });
   const version = appData.versions.pop();
   appData.items = version.items;
   save();
   renderChecklist(true);
   updateUndoButton();
+  updateRedoButton();
+}
+
+function redo() {
+  if (appData.redoVersions.length === 0) return;
+  // Save current state to undo stack before restoring
+  appData.versions.push({
+    items: JSON.parse(JSON.stringify(appData.items)),
+    timestamp: new Date().toISOString(),
+  });
+  const version = appData.redoVersions.pop();
+  appData.items = version.items;
+  save();
+  renderChecklist(true);
+  updateUndoButton();
+  updateRedoButton();
 }
 
 function updateUndoButton() {
@@ -164,9 +192,21 @@ function updateUndoButton() {
   undoBtn.title = canUndo ? `Undo (${appData.versions.length} version${appData.versions.length !== 1 ? 's' : ''})` : 'Undo';
 }
 
+function updateRedoButton() {
+  const canRedo = appData.redoVersions.length > 0;
+  redoBtn.classList.toggle('disabled', !canRedo);
+  redoBtn.title = canRedo ? `Redo (${appData.redoVersions.length} version${appData.redoVersions.length !== 1 ? 's' : ''})` : 'Redo';
+}
+
 undoBtn.addEventListener('click', () => {
   if (!undoBtn.classList.contains('disabled')) {
     undo();
+  }
+});
+
+redoBtn.addEventListener('click', () => {
+  if (!redoBtn.classList.contains('disabled')) {
+    redo();
   }
 });
 
@@ -239,6 +279,8 @@ function renderChecklist(animate = false) {
 }
 
 function createItemHTML(item, isCompleted) {
+  const isLocked = lockedTaskIds.has(item.id);
+
   let childrenHTML = '';
   if (item.children && item.children.length > 0) {
     const childItems = item.children.map((child) => {
@@ -257,20 +299,28 @@ function createItemHTML(item, isCompleted) {
     childrenHTML = `<ul class="sub-list">${childItems}</ul>`;
   }
 
-  const addContextBtn = !isCompleted
+  const addContextBtn = !isCompleted && !isLocked
     ? `<button class="task-context-btn" data-id="${item.id}" title="Add context">${ICON_PLUS}</button>`
     : '';
 
-  const deleteBtn = `<button class="task-delete-btn" data-id="${item.id}" title="Delete">×</button>`;
+  const deleteBtn = !isLocked
+    ? `<button class="task-delete-btn" data-id="${item.id}" title="Delete">×</button>`
+    : '';
 
-  const draggable = !isCompleted ? ' draggable="true"' : '';
+  const processingIndicator = isLocked
+    ? `<div class="task-processing"><span></span><span></span><span></span></div>`
+    : '';
 
-  return `<li data-id="${item.id}" class="task-item ${isCompleted ? 'completed' : ''}"${draggable}>
+  const draggable = !isCompleted && !isLocked ? ' draggable="true"' : '';
+  const lockedClass = isLocked ? ' locked' : '';
+
+  return `<li data-id="${item.id}" class="task-item ${isCompleted ? 'completed' : ''}${lockedClass}"${draggable}>
       <div class="item-row">
         <label>
-          <input type="checkbox" ${item.completed ? 'checked' : ''}>
+          <input type="checkbox" ${item.completed ? 'checked' : ''}${isLocked ? ' disabled' : ''}>
           <span class="item-text">${renderMarkdown(item.text)}</span>
         </label>
+        ${processingIndicator}
         ${addContextBtn}
         ${deleteBtn}
       </div>
@@ -443,7 +493,9 @@ async function handleTaskContext(taskId, noteText) {
 
   pushInput(noteText, 'context');
   pushVersion();
-  showLoading(true);
+
+  lockedTaskIds.add(taskId);
+  renderChecklist();
 
   try {
     const updatedChildren = await window.api.processTaskContext(
@@ -453,11 +505,11 @@ async function handleTaskContext(taskId, noteText) {
     );
     item.children = updatedChildren;
     await save();
-    renderChecklist(true);
   } catch (err) {
     handleOllamaError(err);
   } finally {
-    showLoading(false);
+    lockedTaskIds.delete(taskId);
+    renderChecklist(true);
   }
 }
 
@@ -514,12 +566,20 @@ async function handleMerge(sourceId, targetId) {
 
   pushInput(`[merge] "${source.text}" + "${target.text}"`, 'merge');
   pushVersion();
-  showLoading(true);
+
+  lockedTaskIds.add(sourceId);
+  lockedTaskIds.add(targetId);
+  renderChecklist();
 
   try {
     const merged = await window.api.mergeTasks(source, target);
+
+    lockedTaskIds.delete(sourceId);
+    lockedTaskIds.delete(targetId);
+
     if (!merged) {
       showError('Could not merge tasks. Try again.');
+      renderChecklist();
       return;
     }
 
@@ -530,9 +590,10 @@ async function handleMerge(sourceId, targetId) {
     await save();
     renderChecklist(true);
   } catch (err) {
+    lockedTaskIds.delete(sourceId);
+    lockedTaskIds.delete(targetId);
     handleOllamaError(err);
-  } finally {
-    showLoading(false);
+    renderChecklist();
   }
 }
 
