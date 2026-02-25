@@ -26,6 +26,18 @@ async function init() {
   checkOllamaStatus();
 }
 
+// ---- Markdown Rendering ----
+function renderMarkdown(text) {
+  let html = escapeHtml(text);
+  // Bold: **text**
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Italic: *text*
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  // Inline code: `text`
+  html = html.replace(/`(.+?)`/g, '<code>$1</code>');
+  return html;
+}
+
 // ---- Rendering ----
 function renderChecklist() {
   const active = appData.items.filter((i) => !i.completed);
@@ -53,11 +65,25 @@ function renderChecklist() {
 }
 
 function createItemHTML(item, isCompleted) {
+  let childrenHTML = '';
+  if (item.children && item.children.length > 0) {
+    const childItems = item.children.map((child) => {
+      return `<li data-id="${child.id}" class="sub-item ${child.completed ? 'completed' : ''}">
+        <label>
+          <input type="checkbox" ${child.completed ? 'checked' : ''}>
+          <span class="item-text">${renderMarkdown(child.text)}</span>
+        </label>
+      </li>`;
+    }).join('');
+    childrenHTML = `<ul class="sub-list">${childItems}</ul>`;
+  }
+
   return `<li data-id="${item.id}" class="${isCompleted ? 'completed' : ''}">
       <label>
         <input type="checkbox" ${item.completed ? 'checked' : ''}>
-        <span class="item-text">${escapeHtml(item.text)}</span>
+        <span class="item-text">${renderMarkdown(item.text)}</span>
       </label>
+      ${childrenHTML}
     </li>`;
 }
 
@@ -72,6 +98,23 @@ function handleCheckboxChange(e) {
   const li = e.target.closest('li');
   if (!li) return;
   const id = li.dataset.id;
+
+  // Check if it's a sub-item
+  const parentLi = li.closest('li:not(.sub-item)');
+  if (li.classList.contains('sub-item') && parentLi) {
+    const parentId = parentLi.dataset.id;
+    const parent = appData.items.find((i) => i.id === parentId);
+    if (parent && parent.children) {
+      const child = parent.children.find((c) => c.id === id);
+      if (child) {
+        child.completed = e.target.checked;
+        save();
+        renderChecklist();
+        return;
+      }
+    }
+  }
+
   const item = appData.items.find((i) => i.id === id);
   if (item) {
     item.completed = e.target.checked;
@@ -89,6 +132,25 @@ function handleItemContextMenu(e) {
   if (!li) return;
   e.preventDefault();
   const id = li.dataset.id;
+
+  // Check if it's a sub-item
+  if (li.classList.contains('sub-item')) {
+    const parentLi = li.closest('li:not(.sub-item)');
+    if (parentLi) {
+      const parentId = parentLi.dataset.id;
+      const parent = appData.items.find((i) => i.id === parentId);
+      if (parent && parent.children) {
+        const child = parent.children.find((c) => c.id === id);
+        if (child && confirm(`Delete "${child.text}"?`)) {
+          parent.children = parent.children.filter((c) => c.id !== id);
+          save();
+          renderChecklist();
+          return;
+        }
+      }
+    }
+  }
+
   const item = appData.items.find((i) => i.id === id);
   if (item && confirm(`Delete "${item.text}"?`)) {
     appData.items = appData.items.filter((i) => i.id !== id);
@@ -145,7 +207,8 @@ async function handleSubmit() {
     if (newItems.length === 0) {
       showError('Could not extract any checklist items. Try rephrasing your note.');
     } else {
-      appData.items.push(...newItems);
+      // Replace all items with the merged result from the LLM
+      appData.items = newItems;
       await save();
       renderChecklist();
       noteInput.value = '';

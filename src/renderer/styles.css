@@ -6,33 +6,23 @@
 }
 
 :root {
-  --bg-primary: #1e1e1e;
-  --bg-secondary: #2a2a2a;
-  --bg-tertiary: #333333;
-  --text-primary: #e0e0e0;
-  --text-secondary: #999999;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+  --bg-tertiary: #ebebeb;
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
   --accent: #5b9bd5;
   --accent-hover: #4a8bc4;
-  --border: #3a3a3a;
+  --border: #e0e0e0;
   --danger: #d55b5b;
   --radius: 8px;
-  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', sans-serif;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg-primary: #ffffff;
-    --bg-secondary: #f5f5f5;
-    --bg-tertiary: #ebebeb;
-    --text-primary: #1a1a1a;
-    --text-secondary: #666666;
-    --border: #d0d0d0;
-  }
+  --font: 'Poppins', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
 }
 
 html, body {
   font-family: var(--font);
   font-size: 13px;
+  font-weight: 400;
   color: var(--text-primary);
   background: var(--bg-primary);
   height: 100%;
@@ -119,7 +109,7 @@ ul {
 
 li {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
   padding: 6px 12px;
   transition: background 0.15s;
 }
@@ -153,9 +143,54 @@ li .item-text {
   word-break: break-word;
 }
 
-li.completed .item-text {
+li .item-text strong {
+  font-weight: 600;
+}
+
+li .item-text em {
+  font-style: italic;
+}
+
+li .item-text code {
+  background: var(--bg-tertiary);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 12px;
+}
+
+li.completed > label .item-text {
   text-decoration: line-through;
   color: var(--text-secondary);
+}
+
+/* ---- Sub-items (nested checklist) ---- */
+.sub-list {
+  margin-left: 22px;
+  margin-top: 2px;
+  padding: 0;
+}
+
+.sub-list li.sub-item {
+  padding: 3px 0;
+}
+
+.sub-list li.sub-item:hover {
+  background: none;
+}
+
+.sub-list li.sub-item label {
+  gap: 6px;
+}
+
+.sub-list li.sub-item .item-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.sub-list li.sub-item.completed .item-text {
+  text-decoration: line-through;
+  color: var(--border);
 }
 
 /* ---- Completed Section ---- */
@@ -322,21 +357,21 @@ textarea::placeholder {
 #loading-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(255, 255, 255, 0.8);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 12px;
   z-index: 100;
-  color: #ffffff;
+  color: var(--text-primary);
   font-size: 13px;
 }
 
 .spinner {
   width: 24px;
   height: 24px;
-  border: 3px solid rgba(255, 255, 255, 0.3);
+  border: 3px solid var(--border);
   border-top-color: var(--accent);
   border-radius: 50%;
   animation: spin 0.8s linear infinite;

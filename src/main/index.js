@@ -16,8 +16,8 @@ const mb = menubar({
   preloadWindow: true,
   tooltip: 'SimpleNotes',
   browserWindow: {
-    width: 380,
-    height: 600,
+    width: 400,
+    height: 400,
     frame: false,
     resizable: false,
     alwaysOnTop: true,
@@ -65,8 +65,9 @@ ipcMain.handle('process-note', async (_event, text, context) => {
   const data = store.loadData();
   const model = data.settings.ollamaModel;
   const baseUrl = data.settings.ollamaUrl;
+  const existingItems = data.items || [];
 
-  const response = await ollama.processNote(text, context, model, baseUrl);
+  const response = await ollama.processNote(text, context, existingItems, model, baseUrl);
   const items = parseChecklist(response);
   return items;
 });

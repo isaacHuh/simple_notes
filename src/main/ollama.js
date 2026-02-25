@@ -1,9 +1,40 @@
 const DEFAULT_URL = 'http://localhost:11434';
 
-const SYSTEM_PROMPT = `You are a task extraction assistant. Given a note or text, extract actionable items and return them as a markdown checklist. Each item should be on its own line starting with "- [ ] ". Return ONLY the checklist, no other text. If there is additional context provided, use it to better understand and refine the tasks.`;
+const SYSTEM_PROMPT = `You are a task organization assistant. Given one or more notes, you must merge and consolidate them into a single structured checklist. Do NOT create a separate top-level item for each note — instead, intelligently group related items under common themes or goals.
 
-async function processNote(text, context, model = 'qwen2.5:7b', baseUrl = DEFAULT_URL) {
+Rules:
+- Return ONLY a markdown checklist, no other text.
+- Use "- [ ] " for top-level items.
+- Use "  - [ ] " (2-space indent) for sub-items nested under a parent.
+- Merge related notes into one parent item with sub-items underneath.
+- If multiple notes refer to the same topic, combine them into one entry with sub-bullets.
+- Use concise, actionable language.
+- Support **bold** for emphasis on key words when helpful.
+- If existing items are provided, merge new notes into them where relevant — do not duplicate.
+
+Example output:
+- [ ] **Grocery shopping**
+  - [ ] Buy milk and eggs
+  - [ ] Pick up bread
+  - [ ] Get fruits and vegetables
+- [ ] **Project setup**
+  - [ ] Initialize repository
+  - [ ] Configure linting`;
+
+async function processNote(text, context, existingItems, model = 'qwen2.5:7b', baseUrl = DEFAULT_URL) {
   let userMessage = text;
+  if (existingItems && existingItems.length > 0) {
+    const existing = existingItems.map((item) => {
+      let line = `- [${item.completed ? 'x' : ' '}] ${item.text}`;
+      if (item.children && item.children.length > 0) {
+        for (const child of item.children) {
+          line += `\n  - [${child.completed ? 'x' : ' '}] ${child.text}`;
+        }
+      }
+      return line;
+    }).join('\n');
+    userMessage += '\n\n---\nExisting items (merge into these where relevant):\n' + existing;
+  }
   if (context && context.trim()) {
     userMessage += '\n\n---\nAdditional context:\n' + context;
   }
