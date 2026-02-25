@@ -10,8 +10,9 @@ const completedList = document.getElementById('completed-list');
 const emptyState = document.getElementById('empty-state');
 const completedCount = document.getElementById('completed-count');
 const completedToggle = document.getElementById('completed-toggle');
-const clearCompletedBtn = document.getElementById('clear-completed');
 const noteInput = document.getElementById('note-input');
+const addBtn = document.getElementById('add-btn');
+const inputSection = document.getElementById('input-section');
 const statusIndicator = document.getElementById('status-indicator');
 const errorBanner = document.getElementById('error-banner');
 const errorMessage = document.getElementById('error-message');
@@ -29,6 +30,7 @@ const historyPanel = document.getElementById('history-panel');
 const historyList = document.getElementById('history-list');
 const historyEmpty = document.getElementById('history-empty');
 const historyClose = document.getElementById('history-close');
+const dragHandle = document.getElementById('drag-handle');
 
 // ---- SVG Icons ----
 const ICON_PLUS = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -40,10 +42,9 @@ async function init() {
   appData = await window.api.loadData();
   if (!appData.versions) appData.versions = [];
   if (!appData.inputHistory) appData.inputHistory = [];
-  applyTheme(appData.settings.theme || 'light');
+  applyTheme(appData.settings.theme || 'dark');
   renderChecklist(true);
   updateUndoButton();
-  updateHistoryButton();
   checkOllamaStatus();
 }
 
@@ -53,7 +54,7 @@ function applyTheme(theme) {
 }
 
 themeToggle.addEventListener('click', () => {
-  const current = document.documentElement.getAttribute('data-theme') || 'light';
+  const current = document.documentElement.getAttribute('data-theme') || 'dark';
   const next = current === 'dark' ? 'light' : 'dark';
   applyTheme(next);
   appData.settings.theme = next;
@@ -70,11 +71,12 @@ function pushInput(text, source = 'note') {
   if (appData.inputHistory.length > 50) {
     appData.inputHistory = appData.inputHistory.slice(-50);
   }
-  updateHistoryButton();
 }
 
-function updateHistoryButton() {
-  historyBtn.classList.toggle('hidden', appData.inputHistory.length === 0);
+function formatHistoryTime(ts) {
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ', ' +
+    d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
 function renderHistory() {
@@ -86,26 +88,50 @@ function renderHistory() {
   }
   historyEmpty.classList.add('hidden');
   historyList.innerHTML = entries.map((entry) => {
-    const time = new Date(entry.timestamp).toLocaleString(undefined, {
-      month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit',
-    });
-    return `<li>
+    const time = formatHistoryTime(entry.timestamp);
+    const badge = entry.source.toUpperCase();
+    return `<li data-text="${escapeAttr(entry.text)}">
       <div class="history-text">${escapeHtml(entry.text)}</div>
       <div class="history-meta">
-        <span class="history-badge">${entry.source}</span>
-        <span>${time}</span>
+        <span class="history-badge">${badge}</span>
+        <span class="history-time">${time}</span>
       </div>
     </li>`;
   }).join('');
 }
 
-historyBtn.addEventListener('click', () => {
-  renderHistory();
-  historyPanel.classList.remove('hidden');
-});
+function toggleHistoryPanel() {
+  const isOpen = !historyPanel.classList.contains('hidden');
+  if (isOpen) {
+    closeHistoryPanel();
+  } else {
+    renderHistory();
+    historyPanel.classList.remove('hidden');
+    historyBtn.classList.add('active');
+    dragHandle.classList.add('history-open');
+  }
+}
 
-historyClose.addEventListener('click', () => {
+function closeHistoryPanel() {
   historyPanel.classList.add('hidden');
+  historyBtn.classList.remove('active');
+  dragHandle.classList.remove('history-open');
+}
+
+historyBtn.addEventListener('click', toggleHistoryPanel);
+historyClose.addEventListener('click', closeHistoryPanel);
+
+// Click history item to restore its text to input
+historyList.addEventListener('click', (e) => {
+  const li = e.target.closest('#history-list li');
+  if (!li) return;
+  const text = li.dataset.text;
+  if (text) {
+    noteInput.value = text;
+    updateAddButton();
+    closeHistoryPanel();
+    setTimeout(() => noteInput.focus(), 50);
+  }
 });
 
 // ---- Version History ----
@@ -130,12 +156,16 @@ function undo() {
 }
 
 function updateUndoButton() {
-  const count = appData.versions.length;
-  undoBtn.classList.toggle('hidden', count === 0);
-  undoBtn.title = count > 0 ? `Undo last AI change (${count} version${count !== 1 ? 's' : ''})` : '';
+  const canUndo = appData.versions.length > 0;
+  undoBtn.classList.toggle('disabled', !canUndo);
+  undoBtn.title = canUndo ? `Undo (${appData.versions.length} version${appData.versions.length !== 1 ? 's' : ''})` : 'Undo';
 }
 
-undoBtn.addEventListener('click', undo);
+undoBtn.addEventListener('click', () => {
+  if (!undoBtn.classList.contains('disabled')) {
+    undo();
+  }
+});
 
 // ---- Custom Confirm Dialog ----
 function showConfirm(message) {
@@ -197,7 +227,6 @@ function renderChecklist(animate = false) {
 
   if (completed.length > 0) {
     document.getElementById('completed-section').style.display = '';
-    clearCompletedBtn.classList.toggle('hidden', completedList.classList.contains('collapsed'));
   } else {
     document.getElementById('completed-section').style.display = 'none';
   }
@@ -226,15 +255,18 @@ function createItemHTML(item, isCompleted) {
     ? `<button class="task-context-btn" data-id="${item.id}" title="Add context">${ICON_PLUS}</button>`
     : '';
 
+  const deleteBtn = `<button class="task-delete-btn" data-id="${item.id}" title="Delete">×</button>`;
+
   const draggable = !isCompleted ? ' draggable="true"' : '';
 
-  return `<li data-id="${item.id}" class="${isCompleted ? 'completed' : ''}"${draggable}>
+  return `<li data-id="${item.id}" class="task-item ${isCompleted ? 'completed' : ''}"${draggable}>
       <div class="item-row">
         <label>
           <input type="checkbox" ${item.completed ? 'checked' : ''}>
           <span class="item-text">${renderMarkdown(item.text)}</span>
         </label>
         ${addContextBtn}
+        ${deleteBtn}
       </div>
       ${childrenHTML}
       <div class="task-context-input hidden" data-for="${item.id}">
@@ -260,7 +292,6 @@ function handleCheckboxChange(e) {
   if (!li) return;
   const id = li.dataset.id;
 
-  // Play check animation only on the checkbox that was actually clicked
   if (checkbox.checked) {
     checkbox.classList.add('just-checked');
     checkbox.addEventListener('animationend', () => {
@@ -291,7 +322,26 @@ function handleCheckboxChange(e) {
   }
 }
 
-// Right-click to delete (event delegation)
+// Delete button click (event delegation)
+activeList.addEventListener('click', handleItemClick);
+completedList.addEventListener('click', handleItemClick);
+
+async function handleItemClick(e) {
+  const deleteBtn = e.target.closest('.task-delete-btn');
+  if (deleteBtn) {
+    e.preventDefault();
+    const id = deleteBtn.dataset.id;
+    const item = appData.items.find((i) => i.id === id);
+    if (item && await showConfirm(`Delete "${item.text}"?`)) {
+      appData.items = appData.items.filter((i) => i.id !== id);
+      save();
+      renderChecklist();
+    }
+    return;
+  }
+}
+
+// Right-click to delete (keep as alternative)
 activeList.addEventListener('contextmenu', handleItemContextMenu);
 completedList.addEventListener('contextmenu', handleItemContextMenu);
 
@@ -423,7 +473,6 @@ activeList.addEventListener('dragover', (e) => {
   if (!li || li.dataset.id === dragSourceId) return;
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
-  // Clear previous drop targets, highlight current
   activeList.querySelectorAll('.drop-target').forEach((el) => el.classList.remove('drop-target'));
   li.classList.add('drop-target');
 });
@@ -481,33 +530,40 @@ async function handleMerge(sourceId, targetId) {
 completedToggle.addEventListener('click', () => {
   completedList.classList.toggle('collapsed');
   completedToggle.classList.toggle('expanded');
-  clearCompletedBtn.classList.toggle('hidden', completedList.classList.contains('collapsed'));
 });
 
-// Clear completed
-clearCompletedBtn.addEventListener('click', async () => {
-  const count = appData.items.filter((i) => i.completed).length;
-  if (await showConfirm(`Clear ${count} completed item${count !== 1 ? 's' : ''}?`)) {
-    appData.items = appData.items.filter((i) => !i.completed);
-    save();
-    renderChecklist();
-  }
+// ---- Input Bar ----
+function updateAddButton() {
+  addBtn.classList.toggle('hidden', !noteInput.value.trim());
+}
+
+noteInput.addEventListener('input', updateAddButton);
+
+noteInput.addEventListener('focus', () => {
+  inputSection.classList.add('focused');
 });
 
-// ---- Async Note Queue ----
+noteInput.addEventListener('blur', () => {
+  inputSection.classList.remove('focused');
+});
+
 noteInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
+  if (e.key === 'Enter') {
     e.preventDefault();
     handleSubmit();
   }
 });
 
+addBtn.addEventListener('click', handleSubmit);
+
+// ---- Async Note Queue ----
 function handleSubmit() {
   const noteText = noteInput.value.trim();
   if (!noteText) return;
 
   pushInput(noteText, 'note');
   noteInput.value = '';
+  updateAddButton();
   noteInput.focus();
   noteQueue.push(noteText);
   updateQueueIndicator();
@@ -524,7 +580,6 @@ async function processQueue() {
     const noteText = noteQueue.shift();
     updateQueueIndicator();
 
-    // Snapshot before each LLM processing
     pushVersion();
 
     try {
@@ -532,7 +587,6 @@ async function processQueue() {
       if (newItems.length === 0) {
         showError('Could not extract any checklist items. Try rephrasing your note.');
       } else {
-        // Append new items (no merge — new notes are always new items)
         appData.items = [...appData.items, ...newItems];
         await save();
         renderChecklist(true);
@@ -615,6 +669,10 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+function escapeAttr(text) {
+  return text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 // ---- Start ----
