@@ -10,4 +10,5 @@ contextBridge.exposeInMainWorld('api', {
   checkOllama: () => ipcRenderer.invoke('check-ollama'),
   listModels: () => ipcRenderer.invoke('list-models'),
   hideWindow: () => ipcRenderer.send('hide-window'),
+  resizeWindow: (height) => ipcRenderer.send('resize-window', height),
 });

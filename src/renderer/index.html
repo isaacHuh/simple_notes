@@ -1,85 +1,98 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src http://localhost:*;">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <title>Sticky</title>
 </head>
 <body>
-  <!-- Draggable title bar -->
+  <!-- Title bar -->
   <div id="drag-handle">
-    <svg class="drag-icon" width="14" height="14" viewBox="0 0 14 14" fill="none">
-      <circle cx="3" cy="3" r="1" fill="currentColor"/>
-      <circle cx="7" cy="3" r="1" fill="currentColor"/>
-      <circle cx="11" cy="3" r="1" fill="currentColor"/>
-      <circle cx="3" cy="7" r="1" fill="currentColor"/>
-      <circle cx="7" cy="7" r="1" fill="currentColor"/>
-      <circle cx="11" cy="7" r="1" fill="currentColor"/>
-      <circle cx="3" cy="11" r="1" fill="currentColor"/>
-      <circle cx="7" cy="11" r="1" fill="currentColor"/>
-      <circle cx="11" cy="11" r="1" fill="currentColor"/>
-    </svg>
-    <span class="title">Sticky</span>
-    <button id="undo-btn" class="hidden" title="Undo last AI change">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path d="M2.5 5.5h5a3 3 0 110 6H6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M4.5 3.5L2.5 5.5l2 2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-    <button id="history-btn" class="hidden" title="Input history">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
-        <path d="M7 4v3.5l2.5 1.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-    <button id="theme-toggle" title="Toggle theme">
-      <svg class="icon-moon" width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path d="M7 2a5 5 0 104.33 7.5A3.88 3.88 0 017 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
-      </svg>
-      <svg class="icon-sun" width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <circle cx="7" cy="7" r="2.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
-        <path d="M7 1v2M7 11v2M1 7h2M11 7h2M2.76 2.76l1.41 1.41M9.83 9.83l1.41 1.41M11.24 2.76l-1.41 1.41M4.17 9.83l-1.41 1.41" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-      </svg>
-    </button>
-    <div id="status-indicator" class="status-dot offline" title="Ollama: checking..."></div>
+    <div class="titlebar-left">
+      <div class="drag-dots">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+      <span class="title">Sticky</span>
+    </div>
+    <div class="titlebar-right">
+      <button id="undo-btn" class="icon-btn" title="Undo">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
+             stroke="currentColor" stroke-width="1.6"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 5.5H9a3.5 3.5 0 0 1 0 7H5"/>
+          <path d="M2 5.5L5 2.5M2 5.5L5 8.5"/>
+        </svg>
+      </button>
+      <button id="history-btn" class="icon-btn" title="Input history">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
+             stroke="currentColor" stroke-width="1.6"
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="7" cy="7" r="5.5"/>
+          <path d="M7 4V7l2 1.5"/>
+        </svg>
+      </button>
+      <button id="theme-toggle" class="icon-btn" title="Toggle theme">
+        <svg class="icon-sun" width="14" height="14" viewBox="0 0 14 14" fill="none"
+             stroke="currentColor" stroke-width="1.6"
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="7" cy="7" r="2.5"/>
+          <path d="M7 1v1.5M7 11.5V13M1 7h1.5M11.5 7H13M2.93 2.93l1.06 1.06M10.01 10.01l1.06 1.06M10.01 3.99l1.06-1.06M2.93 11.07l1.06-1.06"/>
+        </svg>
+        <svg class="icon-moon" width="13" height="13" viewBox="0 0 13 13" fill="none"
+             stroke="currentColor" stroke-width="1.6"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M11 8.5A5 5 0 1 1 4.5 2a3.5 3.5 0 0 0 6.5 6.5z"/>
+        </svg>
+      </button>
+      <div id="status-indicator" class="status-dot offline" title="Ollama: checking..."></div>
+    </div>
+  </div>
+
+  <!-- Input history panel (inline, below title bar) -->
+  <div id="history-panel" class="hidden">
+    <div class="history-header">
+      <span>INPUT HISTORY</span>
+      <button id="history-close">×</button>
+    </div>
+    <div class="history-scroll">
+      <ul id="history-list"></ul>
+      <div id="history-empty" class="hidden">no history yet</div>
+    </div>
   </div>
 
   <!-- Active checklist items -->
   <div id="checklist-section">
     <ul id="active-list"></ul>
     <div id="empty-state" class="hidden">
-      <svg class="empty-icon" width="48" height="48" viewBox="0 0 48 48" fill="none">
-        <rect x="8" y="6" width="32" height="36" rx="4" stroke="currentColor" stroke-width="1.5"/>
-        <line x1="16" y1="16" x2="32" y2="16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/>
-        <line x1="16" y1="22" x2="28" y2="22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.35"/>
-        <line x1="16" y1="28" x2="30" y2="28" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.2"/>
-      </svg>
-      <p>Type a note below and press Enter to create checklist items</p>
+      <p>no active tasks · add one below</p>
     </div>
   </div>
 
   <!-- Completed items (collapsible) -->
   <div id="completed-section">
     <button id="completed-toggle" class="section-toggle">
-      Completed (<span id="completed-count">0</span>)
-      <span class="chevron">
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-          <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </span>
+      <span>COMPLETED (<span id="completed-count">0</span>)</span>
+      <span class="chevron">▾</span>
     </button>
     <ul id="completed-list" class="collapsed"></ul>
     <button id="clear-completed" class="text-button hidden">Clear completed</button>
   </div>
 
-  <!-- Input area -->
+  <!-- Input bar -->
   <div id="input-section">
-    <textarea id="note-input" placeholder="What's on your mind?" rows="3"></textarea>
+    <div class="input-row">
+      <span class="input-prompt">›</span>
+      <input id="note-input" type="text" placeholder="Jot down a note" autocomplete="off">
+      <button id="add-btn" class="add-button hidden">add</button>
+    </div>
     <div id="queue-indicator" class="hidden"></div>
   </div>
 
@@ -93,20 +106,6 @@
     </button>
   </div>
 
-  <!-- Input history panel -->
-  <div id="history-panel" class="hidden">
-    <div class="history-header">
-      <span>Input History</span>
-      <button id="history-close">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <path d="M3.5 3.5L10.5 10.5M10.5 3.5L3.5 10.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-        </svg>
-      </button>
-    </div>
-    <ul id="history-list"></ul>
-    <div id="history-empty" class="hidden">No input history yet</div>
-  </div>
-
   <!-- Loading overlay (used only for task context processing) -->
   <div id="loading-overlay" class="hidden">
     <div class="loading-dots">
@@ -117,7 +116,7 @@
     <span class="loading-text">Processing with Ollama</span>
   </div>
 
-  <!-- Custom confirm dialog (no icon) -->
+  <!-- Custom confirm dialog -->
   <div id="confirm-dialog" class="hidden">
     <div class="confirm-backdrop"></div>
     <div class="confirm-card">
