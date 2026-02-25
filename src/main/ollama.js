@@ -2,7 +2,7 @@ const DEFAULT_URL = 'http://localhost:11434';
 
 const SYSTEM_PROMPT = `You are a task extraction assistant. Given a note or text, extract actionable items and return them as a markdown checklist. Each item should be on its own line starting with "- [ ] ". Return ONLY the checklist, no other text. If there is additional context provided, use it to better understand and refine the tasks.`;
 
-async function processNote(text, context, model = 'llama3.2', baseUrl = DEFAULT_URL) {
+async function processNote(text, context, model = 'qwen2.5:7b', baseUrl = DEFAULT_URL) {
   let userMessage = text;
   if (context && context.trim()) {
     userMessage += '\n\n---\nAdditional context:\n' + context;

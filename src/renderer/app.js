@@ -156,7 +156,7 @@ async function handleSubmit() {
     if (err.message.includes('fetch') || err.message.includes('ECONNREFUSED')) {
       showError('Ollama is not running. Start it with: ollama serve');
     } else if (err.message.includes('404') || err.message.includes('not found')) {
-      const model = appData.settings.ollamaModel || 'llama3.2';
+      const model = appData.settings.ollamaModel || 'qwen2.5:7b';
       showError(`Model not found. Run: ollama pull ${model}`);
     } else {
       showError(err.message);
