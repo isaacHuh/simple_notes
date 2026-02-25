@@ -3,3 +3,4 @@ dist/
 build/output/
 *.dmg
 .DS_Store
+.claude/

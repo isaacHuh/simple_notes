@@ -1,6 +1,6 @@
 {
   "name": "simple-notes",
-  "productName": "NoteFlow",
+  "productName": "Sticky",
   "version": "1.0.0",
   "description": "A menu bar note-taking app with local AI powered by Ollama",
   "main": "src/main/index.js",
@@ -18,8 +18,8 @@
     "electron-builder": "^25.0.0"
   },
   "build": {
-    "appId": "com.noteflow.app",
-    "productName": "NoteFlow",
+    "appId": "com.sticky.app",
+    "productName": "Sticky",
     "mac": {
       "category": "public.app-category.productivity",
       "icon": "assets/icon.icns",
@@ -36,8 +36,10 @@
       "perMachine": false
     },
     "files": [
-      "src/**/*",
-      "assets/**/*"
+      "**/*",
+      "!docs",
+      "!.claude",
+      "!README.md"
     ],
     "extraResources": [
       {
