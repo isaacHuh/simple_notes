@@ -352,13 +352,6 @@ textarea::placeholder {
   color: var(--text-secondary);
 }
 
-#input-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  margin-top: 8px;
-}
-
 /* ---- Buttons ---- */
 .text-button {
   background: none;
