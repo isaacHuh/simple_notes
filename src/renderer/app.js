@@ -631,6 +631,7 @@ function updateQueueIndicator() {
   } else {
     queueIndicator.classList.add('hidden');
   }
+  adjustWindowHeight();
 }
 
 // Error banner
