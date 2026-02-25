@@ -106,6 +106,15 @@ ipcMain.on('hide-window', () => {
   mb.hideWindow();
 });
 
+ipcMain.on('resize-window', (_event, height) => {
+  const win = mb.window;
+  if (win) {
+    const [width] = win.getSize();
+    const clamped = Math.min(Math.max(Math.round(height), 120), 600);
+    win.setSize(width, clamped);
+  }
+});
+
 app.on('window-all-closed', (e) => {
   e.preventDefault();
 });

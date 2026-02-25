@@ -110,6 +110,7 @@ function toggleHistoryPanel() {
     historyPanel.classList.remove('hidden');
     historyBtn.classList.add('active');
     dragHandle.classList.add('history-open');
+    adjustWindowHeight();
   }
 }
 
@@ -117,6 +118,7 @@ function closeHistoryPanel() {
   historyPanel.classList.add('hidden');
   historyBtn.classList.remove('active');
   dragHandle.classList.remove('history-open');
+  adjustWindowHeight();
 }
 
 historyBtn.addEventListener('click', toggleHistoryPanel);
@@ -232,6 +234,8 @@ function renderChecklist(animate = false) {
   } else {
     document.getElementById('completed-section').style.display = 'none';
   }
+
+  adjustWindowHeight();
 }
 
 function createItemHTML(item, isCompleted) {
@@ -533,6 +537,7 @@ completedToggle.addEventListener('click', () => {
   completedList.classList.toggle('collapsed');
   completedToggle.classList.toggle('expanded');
   clearCompletedBtn.classList.toggle('hidden', completedList.classList.contains('collapsed'));
+  adjustWindowHeight();
 });
 
 // Clear completed
@@ -686,6 +691,14 @@ function escapeHtml(text) {
 
 function escapeAttr(text) {
   return text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ---- Dynamic Window Sizing ----
+function adjustWindowHeight() {
+  requestAnimationFrame(() => {
+    const height = document.body.scrollHeight;
+    window.api.resizeWindow(height);
+  });
 }
 
 // ---- Start ----
