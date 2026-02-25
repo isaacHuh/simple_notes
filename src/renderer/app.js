@@ -49,17 +49,61 @@ async function init() {
   checkOllamaStatus();
 }
 
-// ---- Theme ----
+// ---- Theme / Color Scheme ----
+const schemePanel = document.getElementById('scheme-panel');
+const schemeClose = document.getElementById('scheme-close');
+const schemeOptions = document.querySelectorAll('.scheme-option');
+
 function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
+  updateSchemeSelection(theme);
 }
 
-themeToggle.addEventListener('click', () => {
-  const current = document.documentElement.getAttribute('data-theme') || 'dark';
-  const next = current === 'dark' ? 'light' : 'dark';
-  applyTheme(next);
-  appData.settings.theme = next;
-  save();
+function updateSchemeSelection(activeScheme) {
+  schemeOptions.forEach((btn) => {
+    const isActive = btn.dataset.scheme === activeScheme;
+    btn.classList.toggle('active', isActive);
+    btn.querySelector('.scheme-check').classList.toggle('hidden', !isActive);
+  });
+}
+
+function toggleSchemePanel() {
+  const isOpen = !schemePanel.classList.contains('hidden');
+  if (isOpen) {
+    closeSchemePanel();
+  } else {
+    schemePanel.classList.remove('hidden');
+    themeToggle.classList.add('active');
+    adjustWindowHeight();
+  }
+}
+
+function closeSchemePanel() {
+  schemePanel.classList.add('hidden');
+  themeToggle.classList.remove('active');
+  adjustWindowHeight();
+}
+
+themeToggle.addEventListener('click', toggleSchemePanel);
+schemeClose.addEventListener('click', closeSchemePanel);
+
+schemeOptions.forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const scheme = btn.dataset.scheme;
+    applyTheme(scheme);
+    appData.settings.theme = scheme;
+    save();
+    closeSchemePanel();
+  });
+});
+
+// Close scheme panel when clicking outside
+document.addEventListener('click', (e) => {
+  if (!schemePanel.classList.contains('hidden') &&
+      !schemePanel.contains(e.target) &&
+      !themeToggle.contains(e.target)) {
+    closeSchemePanel();
+  }
 });
 
 // ---- Input History ----

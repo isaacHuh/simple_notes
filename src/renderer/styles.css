@@ -78,6 +78,130 @@
   --scrollbar-thumb: #ddd9f8;
 }
 
+/* ── Nord Dark ── */
+[data-theme="nord"] {
+  --outer-bg:        #242933;
+  --bg:              #2e3440;
+  --surface:         #3b4252;
+  --surface-hover:   #434c5e;
+  --border:          #4c566a;
+  --border-accent:   #88c0d0;
+  --text:            #eceff4;
+  --text-muted:      #7b88a1;
+  --text-dim:        #4c566a;
+  --accent:          #88c0d0;
+  --accent-glow:     rgba(136, 192, 208, 0.25);
+  --accent-soft:     rgba(136, 192, 208, 0.1);
+  --check:           #a3be8c;
+  --check-bg:        rgba(163, 190, 140, 0.12);
+  --completed-text:  #4c566a;
+  --input-bg:        #2e3440;
+  --badge-bg:        #3b4252;
+  --badge-text:      #88c0d0;
+  --dot-color:       #a3be8c;
+  --hist-bg:         #2e3440;
+  --hist-badge-bg:   #3b4252;
+  --hist-badge-text: #88c0d0;
+  --shadow:          0 8px 60px rgba(0,0,0,0.6), 0 0 120px rgba(136,192,208,0.06);
+  --danger:          #bf616a;
+  --danger-surface:  rgba(191, 97, 106, 0.1);
+  --overlay-bg:      rgba(46, 52, 64, 0.85);
+  --scrollbar-thumb: #4c566a;
+}
+
+/* ── Rose ── */
+[data-theme="rose"] {
+  --outer-bg:        #1a0e14;
+  --bg:              #1e1118;
+  --surface:         #261820;
+  --surface-hover:   #2f1f28;
+  --border:          #3d2a34;
+  --border-accent:   #e8759a;
+  --text:            #f2e4ea;
+  --text-muted:      #7a5a68;
+  --text-dim:        #3d2a34;
+  --accent:          #e8759a;
+  --accent-glow:     rgba(232, 117, 154, 0.25);
+  --accent-soft:     rgba(232, 117, 154, 0.1);
+  --check:           #f0a5c0;
+  --check-bg:        rgba(240, 165, 192, 0.12);
+  --completed-text:  #3d2a34;
+  --input-bg:        #180d12;
+  --badge-bg:        #2f1822;
+  --badge-text:      #e8759a;
+  --dot-color:       #6ee7b7;
+  --hist-bg:         #1e1118;
+  --hist-badge-bg:   #2f1822;
+  --hist-badge-text: #e8759a;
+  --shadow:          0 8px 60px rgba(0,0,0,0.8), 0 0 120px rgba(232,117,154,0.06);
+  --danger:          #f85149;
+  --danger-surface:  rgba(248, 81, 73, 0.1);
+  --overlay-bg:      rgba(30, 17, 24, 0.85);
+  --scrollbar-thumb: #3d2a34;
+}
+
+/* ── Forest ── */
+[data-theme="forest"] {
+  --outer-bg:        #0c1410;
+  --bg:              #101a14;
+  --surface:         #15211a;
+  --surface-hover:   #1c2b22;
+  --border:          #2a3d30;
+  --border-accent:   #4ade80;
+  --text:            #e2f0e8;
+  --text-muted:      #5a7a64;
+  --text-dim:        #2a3d30;
+  --accent:          #4ade80;
+  --accent-glow:     rgba(74, 222, 128, 0.25);
+  --accent-soft:     rgba(74, 222, 128, 0.1);
+  --check:           #86efac;
+  --check-bg:        rgba(134, 239, 172, 0.12);
+  --completed-text:  #2a3d30;
+  --input-bg:        #0c1410;
+  --badge-bg:        #162118;
+  --badge-text:      #4ade80;
+  --dot-color:       #4ade80;
+  --hist-bg:         #101a14;
+  --hist-badge-bg:   #162118;
+  --hist-badge-text: #4ade80;
+  --shadow:          0 8px 60px rgba(0,0,0,0.8), 0 0 120px rgba(74,222,128,0.06);
+  --danger:          #f85149;
+  --danger-surface:  rgba(248, 81, 73, 0.1);
+  --overlay-bg:      rgba(16, 26, 20, 0.85);
+  --scrollbar-thumb: #2a3d30;
+}
+
+/* ── Ocean ── */
+[data-theme="ocean"] {
+  --outer-bg:        #0a1018;
+  --bg:              #0e1620;
+  --surface:         #141e2c;
+  --surface-hover:   #1a2838;
+  --border:          #253548;
+  --border-accent:   #38bdf8;
+  --text:            #e2ecf4;
+  --text-muted:      #5a7a9a;
+  --text-dim:        #253548;
+  --accent:          #38bdf8;
+  --accent-glow:     rgba(56, 189, 248, 0.25);
+  --accent-soft:     rgba(56, 189, 248, 0.1);
+  --check:           #7dd3fc;
+  --check-bg:        rgba(125, 211, 252, 0.12);
+  --completed-text:  #253548;
+  --input-bg:        #0a1018;
+  --badge-bg:        #152030;
+  --badge-text:      #38bdf8;
+  --dot-color:       #4ade80;
+  --hist-bg:         #0e1620;
+  --hist-badge-bg:   #152030;
+  --hist-badge-text: #38bdf8;
+  --shadow:          0 8px 60px rgba(0,0,0,0.8), 0 0 120px rgba(56,189,248,0.06);
+  --danger:          #f85149;
+  --danger-surface:  rgba(248, 81, 73, 0.1);
+  --overlay-bg:      rgba(14, 22, 32, 0.85);
+  --scrollbar-thumb: #253548;
+}
+
 /* ── Base ── */
 html, body {
   font-family: var(--font-body);
@@ -234,11 +358,101 @@ body {
   background: transparent;
 }
 
-/* Show sun in dark mode, moon in light mode */
-.icon-sun { display: block; }
-.icon-moon { display: none; }
-[data-theme="light"] .icon-sun { display: none; }
-[data-theme="light"] .icon-moon { display: block; }
+/* ── Color Scheme Picker ── */
+#scheme-panel {
+  position: fixed;
+  top: 42px;
+  right: 8px;
+  width: 190px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  z-index: 150;
+  animation: confirm-pop 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  overflow: hidden;
+}
+
+.scheme-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.scheme-header span {
+  font-family: var(--font-body);
+  font-size: 9.5px;
+  color: var(--text-muted);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.scheme-header button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1;
+  opacity: 0.6;
+  padding: 0 2px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.scheme-header button:hover {
+  opacity: 1;
+}
+
+.scheme-list {
+  padding: 6px;
+}
+
+.scheme-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-btn);
+  cursor: pointer;
+  transition: background 0.12s;
+  color: var(--text);
+  font-family: var(--font-body);
+}
+
+.scheme-option:hover {
+  background: var(--surface-hover);
+}
+
+.scheme-option.active {
+  background: var(--accent-soft);
+}
+
+.scheme-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1.5px solid rgba(255,255,255,0.15);
+}
+
+.scheme-name {
+  flex: 1;
+  font-size: 12px;
+  text-align: left;
+  letter-spacing: 0.02em;
+}
+
+.scheme-check {
+  font-size: 11px;
+  color: var(--accent);
+  flex-shrink: 0;
+}
 
 /* ── Status Dot ── */
 .status-dot {

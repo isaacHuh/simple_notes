@@ -39,17 +39,14 @@
           <path d="M7 4V7l2 1.5"/>
         </svg>
       </button>
-      <button id="theme-toggle" class="icon-btn" title="Toggle theme">
-        <svg class="icon-sun" width="14" height="14" viewBox="0 0 14 14" fill="none"
+      <button id="theme-toggle" class="icon-btn" title="Color scheme">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
              stroke="currentColor" stroke-width="1.6"
              stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="7" cy="7" r="2.5"/>
-          <path d="M7 1v1.5M7 11.5V13M1 7h1.5M11.5 7H13M2.93 2.93l1.06 1.06M10.01 10.01l1.06 1.06M10.01 3.99l1.06-1.06M2.93 11.07l1.06-1.06"/>
-        </svg>
-        <svg class="icon-moon" width="13" height="13" viewBox="0 0 13 13" fill="none"
-             stroke="currentColor" stroke-width="1.6"
-             stroke-linecap="round" stroke-linejoin="round">
-          <path d="M11 8.5A5 5 0 1 1 4.5 2a3.5 3.5 0 0 0 6.5 6.5z"/>
+          <circle cx="7" cy="7" r="5.5"/>
+          <path d="M7 1.5v11M1.5 7h11"/>
+          <path d="M2.5 3.5Q5 5 5 7t-2.5 3.5"/>
+          <path d="M11.5 3.5Q9 5 9 7t2.5 3.5"/>
         </svg>
       </button>
       <div id="status-indicator" class="status-dot offline" title="Ollama: checking..."></div>
@@ -125,6 +122,46 @@
         <button id="confirm-cancel">Cancel</button>
         <button id="confirm-ok">OK</button>
       </div>
+    </div>
+  </div>
+
+  <!-- Color scheme picker -->
+  <div id="scheme-panel" class="hidden">
+    <div class="scheme-header">
+      <span>COLOR SCHEME</span>
+      <button id="scheme-close">×</button>
+    </div>
+    <div class="scheme-list">
+      <button class="scheme-option" data-scheme="dark">
+        <span class="scheme-swatch" style="background: #6c63ff;"></span>
+        <span class="scheme-name">Obsidian Dark</span>
+        <span class="scheme-check hidden">✓</span>
+      </button>
+      <button class="scheme-option" data-scheme="light">
+        <span class="scheme-swatch" style="background: #5b52ee;"></span>
+        <span class="scheme-name">Obsidian Light</span>
+        <span class="scheme-check hidden">✓</span>
+      </button>
+      <button class="scheme-option" data-scheme="nord">
+        <span class="scheme-swatch" style="background: #88c0d0;"></span>
+        <span class="scheme-name">Nord</span>
+        <span class="scheme-check hidden">✓</span>
+      </button>
+      <button class="scheme-option" data-scheme="rose">
+        <span class="scheme-swatch" style="background: #e8759a;"></span>
+        <span class="scheme-name">Rosé</span>
+        <span class="scheme-check hidden">✓</span>
+      </button>
+      <button class="scheme-option" data-scheme="forest">
+        <span class="scheme-swatch" style="background: #4ade80;"></span>
+        <span class="scheme-name">Forest</span>
+        <span class="scheme-check hidden">✓</span>
+      </button>
+      <button class="scheme-option" data-scheme="ocean">
+        <span class="scheme-swatch" style="background: #38bdf8;"></span>
+        <span class="scheme-name">Ocean</span>
+        <span class="scheme-check hidden">✓</span>
+      </button>
     </div>
   </div>
 
