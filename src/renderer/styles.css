@@ -590,7 +590,7 @@ li.task-item:hover .task-context-btn {
 
 /* ── Inline Task Context Input ── */
 .task-context-input {
-  margin: 8px 0 4px 24px;
+  margin: 8px 14px 4px 24px;
   animation: task-fade-in 0.2s ease;
 }
 
