@@ -1013,6 +1013,10 @@ li.task-item:hover .task-context-btn {
 /* ── Locked Task (processing) ── */
 li.task-item.locked {
   opacity: 0.55;
+}
+
+li.task-item.locked > .item-row label,
+li.task-item.locked > .item-row button {
   pointer-events: none;
 }
 
@@ -1024,7 +1028,7 @@ li.task-item.locked {
   margin-top: 4px;
 }
 
-.task-processing span {
+.task-processing span:not(.queue-label) {
   width: 4px;
   height: 4px;
   background: var(--accent);
@@ -1032,8 +1036,45 @@ li.task-item.locked {
   animation: dot-pulse 1.4s ease-in-out infinite;
 }
 
-.task-processing span:nth-child(2) { animation-delay: 0.16s; }
-.task-processing span:nth-child(3) { animation-delay: 0.32s; }
+.task-processing span:not(.queue-label):nth-child(2) { animation-delay: 0.16s; }
+.task-processing span:not(.queue-label):nth-child(3) { animation-delay: 0.32s; }
+
+/* ── Selected Task (multi-select) ── */
+li.task-item.selected > .item-row {
+  background: var(--accent-soft);
+  outline: 1.5px solid var(--accent);
+  outline-offset: -1.5px;
+  border-radius: var(--radius-btn);
+}
+
+/* ── Merge Queued ── */
+.queue-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-style: italic;
+  letter-spacing: 0.04em;
+}
+
+li.task-item.locked.drop-target {
+  outline-style: dotted;
+}
+
+/* ── Multi-drag ghost ── */
+.drag-ghost {
+  position: fixed;
+  top: -100px;
+  left: -100px;
+  background: var(--accent);
+  color: #ffffff;
+  padding: 4px 10px;
+  border-radius: var(--radius-btn);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 500;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 9999;
+}
 
 /* ── Drag and Drop ── */
 #active-list > li[draggable="true"] {
