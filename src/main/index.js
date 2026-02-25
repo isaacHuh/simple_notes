@@ -3,7 +3,7 @@ const { menubar } = require('menubar');
 const path = require('path');
 const store = require('./store');
 const ollama = require('./ollama');
-const { parseChecklist } = require('./parser');
+const { parseChecklist, parseSubItems } = require('./parser');
 
 const isDev = !app.isPackaged;
 const assetsPath = isDev
@@ -61,15 +61,25 @@ ipcMain.handle('save-data', (_event, data) => {
   return true;
 });
 
-ipcMain.handle('process-note', async (_event, text, context) => {
+ipcMain.handle('process-note', async (_event, text) => {
   const data = store.loadData();
   const model = data.settings.ollamaModel;
   const baseUrl = data.settings.ollamaUrl;
   const existingItems = data.items || [];
 
-  const response = await ollama.processNote(text, context, existingItems, model, baseUrl);
+  const response = await ollama.processNote(text, existingItems, model, baseUrl);
   const items = parseChecklist(response);
   return items;
+});
+
+ipcMain.handle('process-task-context', async (_event, parentText, existingChildren, noteText) => {
+  const data = store.loadData();
+  const model = data.settings.ollamaModel;
+  const baseUrl = data.settings.ollamaUrl;
+
+  const response = await ollama.processTaskContext(parentText, existingChildren, noteText, model, baseUrl);
+  const children = parseSubItems(response);
+  return children;
 });
 
 ipcMain.handle('check-ollama', async () => {

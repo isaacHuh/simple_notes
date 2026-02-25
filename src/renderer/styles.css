@@ -159,9 +159,75 @@ li .item-text code {
   font-size: 12px;
 }
 
-li.completed > label .item-text {
+li.completed > .item-row label .item-text {
   text-decoration: line-through;
   color: var(--text-secondary);
+}
+
+/* ---- Item row (checkbox + text + hover button) ---- */
+.item-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.item-row label {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ---- Per-task context button (hover-only) ---- */
+.task-context-btn {
+  opacity: 0;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font);
+  width: 22px;
+  height: 22px;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+  margin-top: 1px;
+}
+
+li:hover > .item-row .task-context-btn {
+  opacity: 1;
+}
+
+.task-context-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ---- Inline task context input ---- */
+.task-context-input {
+  margin: 6px 0 2px 22px;
+}
+
+.task-context-input textarea {
+  font-size: 12px;
+  padding: 6px 8px;
+}
+
+.task-context-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.task-context-actions .primary-button {
+  padding: 3px 12px;
+  font-size: 11px;
+}
+
+.task-context-actions .text-button {
+  font-size: 11px;
 }
 
 /* ---- Sub-items (nested checklist) ---- */
@@ -286,14 +352,10 @@ textarea::placeholder {
   color: var(--text-secondary);
 }
 
-#context-section {
-  margin-top: 8px;
-}
-
 #input-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   margin-top: 8px;
 }
 
