@@ -1010,6 +1010,31 @@ li.task-item:hover .task-context-btn {
   border-radius: 3px;
 }
 
+/* ── Locked Task (processing) ── */
+li.task-item.locked {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.task-processing {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.task-processing span {
+  width: 4px;
+  height: 4px;
+  background: var(--accent);
+  border-radius: 50%;
+  animation: dot-pulse 1.4s ease-in-out infinite;
+}
+
+.task-processing span:nth-child(2) { animation-delay: 0.16s; }
+.task-processing span:nth-child(3) { animation-delay: 0.32s; }
+
 /* ── Drag and Drop ── */
 #active-list > li[draggable="true"] {
   cursor: grab;
