@@ -1150,7 +1150,7 @@ li.drop-target {
   display: flex;
   flex-direction: column;
   padding: 28px 24px 18px;
-  overflow-y: auto;
+  min-height: 0;
 }
 
 .setup-header {
@@ -1158,6 +1158,7 @@ li.drop-target {
   flex-direction: column;
   gap: 4px;
   margin-bottom: 28px;
+  flex-shrink: 0;
 }
 
 .setup-title {
@@ -1176,10 +1177,12 @@ li.drop-target {
 }
 
 .setup-steps {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 20px;
-  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .setup-step {
@@ -1302,6 +1305,7 @@ li.drop-target {
 
 .setup-footer {
   margin-top: 24px;
+  flex-shrink: 0;
 }
 
 .setup-skip {
@@ -1316,6 +1320,7 @@ li.drop-target {
   width: 100%;
   transition: color 0.15s;
   letter-spacing: 0.02em;
+  flex-shrink: 0;
 }
 
 .setup-skip:hover {
