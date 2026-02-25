@@ -18,14 +18,15 @@ Example output:
 - [ ] **Grocery shopping**
   - [ ] Buy milk and eggs
   - [ ] Pick up bread
-  - Prefer organic produce from Trader Joe's
-- [ ] **Deploy Redis cluster**
-  - [ ] Set up 3-node cluster configuration
-  - [ ] Run migration scripts
-  - Scheduled for Friday with Rohan
-- [ ] **Migrate legacy databases**
-  - [ ] Back up existing data
-  - Affected services: auth, billing`;
+  - Prefer organic if available
+- [ ] **Prepare presentation**
+  - [ ] Draft slide outline
+  - [ ] Add charts and visuals
+  - Due by end of week
+- [ ] **Fix login page bug**
+  - [ ] Reproduce the issue locally
+  - [ ] Write unit tests
+  - Users on mobile are affected`;
 
 const TASK_CONTEXT_PROMPT = `You are a task organization assistant. You will be given a single parent task with its existing sub-items, plus a new note to incorporate into that task.
 
@@ -41,17 +42,17 @@ Rules:
 - Support **bold** for emphasis when helpful.
 
 Example input:
-Parent task: Deploy Redis cluster
+Parent task: Prepare presentation
 Existing sub-items:
-- [ ] Set up 3-node cluster configuration
-- Scheduled for Friday
+- [ ] Draft slide outline
+- Due by end of week
 
-New note: need to also benchmark throughput after deploy
+New note: need to also send calendar invite to the team
 
 Example output:
-- [ ] Set up 3-node cluster configuration
-- Scheduled for Friday
-- [ ] Benchmark throughput after deploy`;
+- [ ] Draft slide outline
+- Due by end of week
+- [ ] Send calendar invite to the team`;
 
 function serializeChildren(children) {
   return children.map((child) => {
