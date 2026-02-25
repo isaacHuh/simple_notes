@@ -68,6 +68,11 @@ function createItemHTML(item, isCompleted) {
   let childrenHTML = '';
   if (item.children && item.children.length > 0) {
     const childItems = item.children.map((child) => {
+      if (child.isContext) {
+        return `<li data-id="${child.id}" class="sub-item context-note">
+          <span class="context-text">${renderMarkdown(child.text)}</span>
+        </li>`;
+      }
       return `<li data-id="${child.id}" class="sub-item ${child.completed ? 'completed' : ''}">
         <label>
           <input type="checkbox" ${child.completed ? 'checked' : ''}>

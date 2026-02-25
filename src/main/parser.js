@@ -4,8 +4,10 @@ function parseChecklist(markdownText) {
   let currentParent = null;
 
   for (const line of lines) {
-    // Check for indented sub-item (2+ spaces or tab before the marker)
+    // Check for indented sub-item with checkbox (2+ spaces or tab before the marker)
     const subMatch = line.match(/^(?:\t| {2,})[-*]\s*\[([ xX])\]\s*(.+)/);
+    // Check for indented context note without checkbox (2+ spaces or tab before the marker)
+    const contextMatch = line.match(/^(?:\t| {2,})[-*]\s+(?!\[[ xX]\])(.+)/);
     // Check for top-level item
     const topMatch = line.match(/^[-*]\s*\[([ xX])\]\s*(.+)/);
 
@@ -14,6 +16,15 @@ function parseChecklist(markdownText) {
         id: generateId(),
         text: subMatch[2].trim(),
         completed: subMatch[1].toLowerCase() === 'x',
+        isContext: false,
+        createdAt: new Date().toISOString(),
+      });
+    } else if (contextMatch && currentParent) {
+      currentParent.children.push({
+        id: generateId(),
+        text: contextMatch[1].trim(),
+        completed: false,
+        isContext: true,
         createdAt: new Date().toISOString(),
       });
     } else if (topMatch) {

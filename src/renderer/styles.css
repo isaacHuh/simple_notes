@@ -193,6 +193,18 @@ li.completed > label .item-text {
   color: var(--border);
 }
 
+/* ---- Context notes (non-actionable info) ---- */
+.sub-list li.sub-item.context-note {
+  padding-left: 20px;
+}
+
+.sub-list li.sub-item.context-note .context-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-style: italic;
+  line-height: 1.4;
+}
+
 /* ---- Completed Section ---- */
 #completed-section {
   border-top: 1px solid var(--border);

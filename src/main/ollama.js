@@ -1,25 +1,31 @@
 const DEFAULT_URL = 'http://localhost:11434';
 
-const SYSTEM_PROMPT = `You are a task organization assistant. Given one or more notes, you must merge and consolidate them into a single structured checklist. Do NOT create a separate top-level item for each note — instead, intelligently group related items under common themes or goals.
+const SYSTEM_PROMPT = `You are a task organization assistant. Given one or more notes, convert them into a structured checklist.
 
 Rules:
 - Return ONLY a markdown checklist, no other text.
 - Use "- [ ] " for top-level items.
-- Use "  - [ ] " (2-space indent) for sub-items nested under a parent.
-- Merge related notes into one parent item with sub-items underneath.
-- If multiple notes refer to the same topic, combine them into one entry with sub-bullets.
-- Use concise, actionable language.
+- Use "  - [ ] " (2-space indent) for actionable sub-tasks nested under a parent.
+- Use "  - " (2-space indent, NO checkbox) for non-actionable context or extra info about a parent item.
+- Each distinct task or topic MUST be its own top-level item. Do NOT merge unrelated tasks under one parent.
+- Only nest sub-items under a parent when they are clearly actionable steps or context for that specific parent task.
+- If multiple notes refer to the exact same task, combine them. Otherwise, keep them as separate top-level items.
+- Use concise, actionable language for tasks.
 - Support **bold** for emphasis on key words when helpful.
-- If existing items are provided, merge new notes into them where relevant — do not duplicate.
+- If existing items are provided, merge new notes into them ONLY when they are clearly about the same task — do not force unrelated notes into existing items.
 
 Example output:
 - [ ] **Grocery shopping**
   - [ ] Buy milk and eggs
   - [ ] Pick up bread
-  - [ ] Get fruits and vegetables
-- [ ] **Project setup**
-  - [ ] Initialize repository
-  - [ ] Configure linting`;
+  - Prefer organic produce from Trader Joe's
+- [ ] **Deploy Redis cluster**
+  - [ ] Set up 3-node cluster configuration
+  - [ ] Run migration scripts
+  - Scheduled for Friday with Rohan
+- [ ] **Migrate legacy databases**
+  - [ ] Back up existing data
+  - Affected services: auth, billing`;
 
 async function processNote(text, context, existingItems, model = 'qwen2.5:7b', baseUrl = DEFAULT_URL) {
   let userMessage = text;
@@ -28,7 +34,11 @@ async function processNote(text, context, existingItems, model = 'qwen2.5:7b', b
       let line = `- [${item.completed ? 'x' : ' '}] ${item.text}`;
       if (item.children && item.children.length > 0) {
         for (const child of item.children) {
-          line += `\n  - [${child.completed ? 'x' : ' '}] ${child.text}`;
+          if (child.isContext) {
+            line += `\n  - ${child.text}`;
+          } else {
+            line += `\n  - [${child.completed ? 'x' : ' '}] ${child.text}`;
+          }
         }
       }
       return line;
