@@ -8,6 +8,7 @@ let selectedTaskIds = new Set();
 let mergeQueue = [];
 let queuedMergeIds = new Set();
 let isShiftHeld = false;
+let isSelecting = false;
 
 document.addEventListener('keydown', (e) => { if (e.key === 'Shift') isShiftHeld = true; });
 document.addEventListener('keyup', (e) => { if (e.key === 'Shift') isShiftHeld = false; });
@@ -696,28 +697,47 @@ async function handleTaskContext(taskId, noteText) {
   }
 }
 
-// ---- Multi-select (Shift+Click) ----
+// ---- Multi-select (Shift + Drag to sweep-select) ----
+
+// Shift+mousedown begins sweep selection
+activeList.addEventListener('mousedown', (e) => {
+  if (!isShiftHeld) return;
+  if (e.target.closest('button, textarea')) return;
+
+  const li = e.target.closest('#active-list > li.task-item');
+  if (!li || li.classList.contains('locked') || li.classList.contains('completed')) return;
+
+  e.preventDefault(); // Prevent drag initiation and text selection
+  isSelecting = true;
+
+  const id = li.dataset.id;
+  selectedTaskIds.add(id);
+  li.classList.add('selected');
+});
+
+// While sweeping, add every task the cursor enters
+activeList.addEventListener('mouseover', (e) => {
+  if (!isSelecting) return;
+
+  const li = e.target.closest('#active-list > li.task-item');
+  if (!li || li.classList.contains('locked') || li.classList.contains('completed')) return;
+
+  const id = li.dataset.id;
+  selectedTaskIds.add(id);
+  li.classList.add('selected');
+});
+
+// Mouseup ends sweep
+document.addEventListener('mouseup', () => {
+  isSelecting = false;
+});
+
+// Prevent checkbox toggle and clear selection on normal click
 activeList.addEventListener('click', (e) => {
-  // Don't handle selection when clicking buttons or textareas
   if (e.target.closest('button, textarea')) return;
 
   if (isShiftHeld) {
-    // Prevent the label from forwarding a synthetic click to the checkbox
-    e.preventDefault();
-
-    // Skip the synthetic click dispatched by the label (target is the input)
-    if (e.target.tagName === 'INPUT') return;
-
-    const li = e.target.closest('#active-list > li.task-item');
-    if (!li || li.classList.contains('locked') || li.classList.contains('completed')) return;
-
-    const id = li.dataset.id;
-    if (selectedTaskIds.has(id)) {
-      selectedTaskIds.delete(id);
-    } else {
-      selectedTaskIds.add(id);
-    }
-    li.classList.toggle('selected', selectedTaskIds.has(id));
+    e.preventDefault(); // Prevent checkbox toggle from label forwarding
     return;
   }
 
@@ -730,6 +750,12 @@ activeList.addEventListener('click', (e) => {
 
 // ---- Drag and Drop (merge task trees) ----
 activeList.addEventListener('dragstart', (e) => {
+  // Shift is for sweep-selection, not dragging
+  if (isShiftHeld) {
+    e.preventDefault();
+    return;
+  }
+
   const li = e.target.closest('#active-list > li');
   if (!li) return;
 
