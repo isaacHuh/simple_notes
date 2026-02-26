@@ -55,13 +55,13 @@ Example output:
 - Due by end of week
 - [ ] Send calendar invite to the team`;
 
-const MERGE_PROMPT = `You are a task organization assistant. Merge two task trees into a single, unified task tree.
+const MERGE_PROMPT = `You are a task organization assistant. Merge the given task trees into a single, unified task tree.
 
 Rules:
 - Return ONLY a markdown checklist for the merged task, no other text.
 - Create ONE parent item using "- [ ] " that best describes the combined scope.
 - Merge duplicate or very similar sub-items into one.
-- Preserve all unique sub-items and context notes from both tasks.
+- Preserve all unique sub-items and context notes from all tasks.
 - Use "  - [ ] " (2-space indent) for actionable sub-tasks.
 - Use "  - " (2-space indent, NO checkbox) for context notes.
 - Use concise language.
@@ -132,6 +132,14 @@ async function mergeTasks(taskA, taskB, model = 'qwen3:8b', baseUrl = DEFAULT_UR
   return callOllama(MERGE_PROMPT, userMessage, model, baseUrl);
 }
 
+async function mergeMultipleTasks(tasks, model = 'qwen3:8b', baseUrl = DEFAULT_URL) {
+  const userMessage = tasks.map((task, i) => {
+    const label = String.fromCharCode(65 + i);
+    return `Task ${label}:\n${serializeTask(task)}`;
+  }).join('\n\n');
+  return callOllama(MERGE_PROMPT, userMessage, model, baseUrl);
+}
+
 async function healthCheck(baseUrl = DEFAULT_URL) {
   try {
     const res = await fetch(baseUrl, { signal: AbortSignal.timeout(3000) });
@@ -148,4 +156,4 @@ async function listModels(baseUrl = DEFAULT_URL) {
   return data.models.map((m) => m.name);
 }
 
-module.exports = { processNote, processTaskContext, mergeTasks, healthCheck, listModels };
+module.exports = { processNote, processTaskContext, mergeTasks, mergeMultipleTasks, healthCheck, listModels };

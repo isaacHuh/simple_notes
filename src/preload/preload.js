@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('api', {
   saveData: (data) => ipcRenderer.invoke('save-data', data),
   processNote: (text) => ipcRenderer.invoke('process-note', text),
   mergeTasks: (taskA, taskB) => ipcRenderer.invoke('merge-tasks', taskA, taskB),
+  mergeMultipleTasks: (tasks) => ipcRenderer.invoke('merge-multiple-tasks', tasks),
   processTaskContext: (parentText, existingChildren, noteText) =>
     ipcRenderer.invoke('process-task-context', parentText, existingChildren, noteText),
   checkOllama: () => ipcRenderer.invoke('check-ollama'),

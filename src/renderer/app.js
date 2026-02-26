@@ -2,8 +2,16 @@
 let appData = { items: [], versions: [], redoVersions: [], settings: {} };
 let noteQueue = [];
 let isProcessing = false;
-let dragSourceId = null;
+let dragSourceIds = new Set();
 let lockedTaskIds = new Set();
+let selectedTaskIds = new Set();
+let mergeQueue = [];
+let queuedMergeIds = new Set();
+let isShiftHeld = false;
+let isSelecting = false;
+
+document.addEventListener('keydown', (e) => { if (e.key === 'Shift') isShiftHeld = true; });
+document.addEventListener('keyup', (e) => { if (e.key === 'Shift') isShiftHeld = false; });
 
 // ---- DOM References ----
 const activeList = document.getElementById('active-list');
@@ -472,14 +480,18 @@ function createItemHTML(item, isCompleted) {
     ? `<button class="task-delete-btn" data-id="${item.id}" title="Delete">×</button>`
     : '';
 
-  const processingIndicator = isLocked
+  const isQueued = queuedMergeIds.has(item.id);
+  const processingIndicator = isQueued
+    ? `<div class="task-processing"><span class="queue-label">Queued</span></div>`
+    : isLocked
     ? `<div class="task-processing"><span></span><span></span><span></span></div>`
     : '';
 
   const draggable = !isCompleted && !isLocked ? ' draggable="true"' : '';
   const lockedClass = isLocked ? ' locked' : '';
+  const selectedClass = selectedTaskIds.has(item.id) ? ' selected' : '';
 
-  return `<li data-id="${item.id}" class="task-item ${isCompleted ? 'completed' : ''}${lockedClass}"${draggable}>
+  return `<li data-id="${item.id}" class="task-item ${isCompleted ? 'completed' : ''}${lockedClass}${selectedClass}"${draggable}>
       <div class="item-row">
         <label>
           <input type="checkbox" ${item.completed ? 'checked' : ''}${isLocked ? ' disabled' : ''}>
@@ -508,6 +520,13 @@ completedList.addEventListener('change', handleCheckboxChange);
 
 function handleCheckboxChange(e) {
   if (e.target.type !== 'checkbox') return;
+
+  // Shift+click is for multi-selection, not checkbox toggling
+  if (isShiftHeld) {
+    e.target.checked = !e.target.checked;
+    return;
+  }
+
   const checkbox = e.target;
   const li = checkbox.closest('li');
   if (!li) return;
@@ -678,26 +697,108 @@ async function handleTaskContext(taskId, noteText) {
   }
 }
 
-// ---- Drag and Drop (merge task trees) ----
-activeList.addEventListener('dragstart', (e) => {
-  const li = e.target.closest('#active-list > li');
-  if (!li) return;
-  dragSourceId = li.dataset.id;
-  li.classList.add('dragging');
-  e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setData('text/plain', dragSourceId);
+// ---- Multi-select (Shift + Drag to sweep-select) ----
+
+// Shift+mousedown begins sweep selection
+activeList.addEventListener('mousedown', (e) => {
+  if (!isShiftHeld) return;
+  if (e.target.closest('button, textarea')) return;
+
+  const li = e.target.closest('#active-list > li.task-item');
+  if (!li || li.classList.contains('locked') || li.classList.contains('completed')) return;
+
+  e.preventDefault(); // Prevent drag initiation and text selection
+  isSelecting = true;
+
+  const id = li.dataset.id;
+  selectedTaskIds.add(id);
+  li.classList.add('selected');
 });
 
-activeList.addEventListener('dragend', (e) => {
+// While sweeping, add every task the cursor enters
+activeList.addEventListener('mouseover', (e) => {
+  if (!isSelecting) return;
+
+  const li = e.target.closest('#active-list > li.task-item');
+  if (!li || li.classList.contains('locked') || li.classList.contains('completed')) return;
+
+  const id = li.dataset.id;
+  selectedTaskIds.add(id);
+  li.classList.add('selected');
+});
+
+// Mouseup ends sweep
+document.addEventListener('mouseup', () => {
+  isSelecting = false;
+});
+
+// Prevent checkbox toggle and clear selection on normal click
+activeList.addEventListener('click', (e) => {
+  if (e.target.closest('button, textarea')) return;
+
+  if (isShiftHeld) {
+    e.preventDefault(); // Prevent checkbox toggle from label forwarding
+    return;
+  }
+
+  // Clear selection on non-shift click
+  if (selectedTaskIds.size > 0) {
+    selectedTaskIds.clear();
+    activeList.querySelectorAll('.selected').forEach((el) => el.classList.remove('selected'));
+  }
+});
+
+// ---- Drag and Drop (merge task trees) ----
+activeList.addEventListener('dragstart', (e) => {
+  // Shift is for sweep-selection, not dragging
+  if (isShiftHeld) {
+    e.preventDefault();
+    return;
+  }
+
   const li = e.target.closest('#active-list > li');
-  if (li) li.classList.remove('dragging');
+  if (!li) return;
+
+  const id = li.dataset.id;
+  dragSourceIds.clear();
+
+  // If dragging a selected item, drag all selected items
+  if (selectedTaskIds.has(id) && selectedTaskIds.size > 1) {
+    selectedTaskIds.forEach((sid) => dragSourceIds.add(sid));
+  } else {
+    // Single drag — clear any previous selection
+    selectedTaskIds.clear();
+    dragSourceIds.add(id);
+  }
+
+  dragSourceIds.forEach((sid) => {
+    const el = activeList.querySelector(`li[data-id="${sid}"]`);
+    if (el) el.classList.add('dragging');
+  });
+
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', id);
+
+  // Custom drag image for multi-drag
+  if (dragSourceIds.size > 1) {
+    const ghost = document.createElement('div');
+    ghost.className = 'drag-ghost';
+    ghost.textContent = `${dragSourceIds.size} tasks`;
+    document.body.appendChild(ghost);
+    e.dataTransfer.setDragImage(ghost, 0, 0);
+    requestAnimationFrame(() => ghost.remove());
+  }
+});
+
+activeList.addEventListener('dragend', () => {
+  activeList.querySelectorAll('.dragging').forEach((el) => el.classList.remove('dragging'));
   activeList.querySelectorAll('.drop-target').forEach((el) => el.classList.remove('drop-target'));
-  dragSourceId = null;
+  dragSourceIds.clear();
 });
 
 activeList.addEventListener('dragover', (e) => {
   const li = e.target.closest('#active-list > li');
-  if (!li || li.dataset.id === dragSourceId) return;
+  if (!li || dragSourceIds.has(li.dataset.id)) return;
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
   activeList.querySelectorAll('.drop-target').forEach((el) => el.classList.remove('drop-target'));
@@ -714,14 +815,29 @@ activeList.addEventListener('dragleave', (e) => {
 activeList.addEventListener('drop', async (e) => {
   e.preventDefault();
   const targetLi = e.target.closest('#active-list > li');
-  if (!targetLi || targetLi.dataset.id === dragSourceId) return;
+  if (!targetLi || dragSourceIds.has(targetLi.dataset.id)) return;
   targetLi.classList.remove('drop-target');
 
-  const sourceId = dragSourceId;
+  const sourceIds = [...dragSourceIds];
   const targetId = targetLi.dataset.id;
-  dragSourceId = null;
+  dragSourceIds.clear();
 
-  await handleMerge(sourceId, targetId);
+  // Check if target is locked (currently merging) — queue instead
+  if (lockedTaskIds.has(targetId)) {
+    sourceIds.forEach((id) => {
+      lockedTaskIds.add(id);
+      queuedMergeIds.add(id);
+    });
+    mergeQueue.push({ sourceIds, targetId });
+    renderChecklist();
+    return;
+  }
+
+  if (sourceIds.length === 1) {
+    await handleMerge(sourceIds[0], targetId);
+  } else {
+    await handleMultiMerge(sourceIds, targetId);
+  }
 });
 
 async function handleMerge(sourceId, targetId) {
@@ -745,6 +861,7 @@ async function handleMerge(sourceId, targetId) {
     if (!merged) {
       showError('Could not merge tasks. Try again.');
       renderChecklist();
+      processQueuedMerge([sourceId, targetId], null);
       return;
     }
 
@@ -753,12 +870,96 @@ async function handleMerge(sourceId, targetId) {
     appData.items.splice(Math.min(targetIndex, appData.items.length), 0, merged);
 
     await save();
+    selectedTaskIds.clear();
     renderChecklist(true);
+    processQueuedMerge([sourceId, targetId], merged.id);
   } catch (err) {
     lockedTaskIds.delete(sourceId);
     lockedTaskIds.delete(targetId);
     handleOllamaError(err);
     renderChecklist();
+    processQueuedMerge([sourceId, targetId], null);
+  }
+}
+
+async function handleMultiMerge(sourceIds, targetId) {
+  const sources = sourceIds.map((id) => appData.items.find((i) => i.id === id)).filter(Boolean);
+  const target = appData.items.find((i) => i.id === targetId);
+  if (sources.length === 0 || !target) return;
+
+  const allTasks = [...sources, target];
+  const allIds = [...sourceIds, targetId];
+
+  pushInput(`[merge] ${allTasks.map((t) => `"${t.text}"`).join(' + ')}`, 'merge');
+  pushVersion();
+
+  allIds.forEach((id) => lockedTaskIds.add(id));
+  renderChecklist();
+
+  try {
+    const merged = await window.api.mergeMultipleTasks(allTasks);
+
+    allIds.forEach((id) => lockedTaskIds.delete(id));
+
+    if (!merged) {
+      showError('Could not merge tasks. Try again.');
+      renderChecklist();
+      processQueuedMerge(allIds, null);
+      return;
+    }
+
+    const targetIndex = appData.items.findIndex((i) => i.id === targetId);
+    appData.items = appData.items.filter((i) => !allIds.includes(i.id));
+    appData.items.splice(Math.min(targetIndex, appData.items.length), 0, merged);
+
+    await save();
+    selectedTaskIds.clear();
+    renderChecklist(true);
+    processQueuedMerge(allIds, merged.id);
+  } catch (err) {
+    allIds.forEach((id) => lockedTaskIds.delete(id));
+    handleOllamaError(err);
+    selectedTaskIds.clear();
+    renderChecklist();
+    processQueuedMerge(allIds, null);
+  }
+}
+
+function processQueuedMerge(oldIds, newMergedId) {
+  if (mergeQueue.length === 0) return;
+
+  for (const entry of mergeQueue) {
+    if (oldIds.includes(entry.targetId)) {
+      if (newMergedId) {
+        entry.targetId = newMergedId;
+      } else {
+        // Merge failed — unlock queued sources
+        entry.sourceIds.forEach((id) => {
+          lockedTaskIds.delete(id);
+          queuedMergeIds.delete(id);
+        });
+        entry.failed = true;
+      }
+    }
+  }
+
+  mergeQueue = mergeQueue.filter((e) => !e.failed);
+
+  if (mergeQueue.length === 0) {
+    renderChecklist();
+    return;
+  }
+
+  const next = mergeQueue.shift();
+  next.sourceIds.forEach((id) => {
+    queuedMergeIds.delete(id);
+    lockedTaskIds.delete(id);
+  });
+
+  if (next.sourceIds.length === 1) {
+    handleMerge(next.sourceIds[0], next.targetId);
+  } else {
+    handleMultiMerge(next.sourceIds, next.targetId);
   }
 }
 
@@ -927,7 +1128,11 @@ function escapeAttr(text) {
 // ---- Dynamic Window Sizing ----
 function adjustWindowHeight() {
   requestAnimationFrame(() => {
+    // Temporarily remove the 100vh constraint so scrollHeight
+    // reports the natural content height, not the viewport height.
+    document.body.style.height = 'auto';
     const height = document.body.scrollHeight;
+    document.body.style.height = '';
     window.api.resizeWindow(height);
   });
 }

@@ -82,6 +82,16 @@ ipcMain.handle('merge-tasks', async (_event, taskA, taskB) => {
   return items[0] || null;
 });
 
+ipcMain.handle('merge-multiple-tasks', async (_event, tasks) => {
+  const data = store.loadData();
+  const model = data.settings.ollamaModel;
+  const baseUrl = data.settings.ollamaUrl;
+
+  const response = await ollama.mergeMultipleTasks(tasks, model, baseUrl);
+  const items = parseChecklist(response);
+  return items[0] || null;
+});
+
 ipcMain.handle('process-task-context', async (_event, parentText, existingChildren, noteText) => {
   const data = store.loadData();
   const model = data.settings.ollamaModel;
@@ -110,7 +120,7 @@ ipcMain.on('resize-window', (_event, height) => {
   const win = mb.window;
   if (win) {
     const [width] = win.getSize();
-    const clamped = Math.min(Math.max(Math.round(height), 120), 600);
+    const clamped = Math.min(Math.max(Math.round(height), 120), 800);
     win.setSize(width, clamped);
   }
 });
