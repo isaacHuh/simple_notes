@@ -1,7 +1,7 @@
 {
   "name": "simple-notes",
   "productName": "Sticky",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A menu bar note-taking app with local AI powered by Ollama",
   "license": "MIT",
   "author": "isaacHuh",
@@ -43,14 +43,20 @@
     "mac": {
       "category": "public.app-category.productivity",
       "icon": "assets/icon.icns",
-      "target": ["dmg", "zip"],
+      "target": [
+        "dmg",
+        "zip"
+      ],
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist",
       "notarize": true
     },
     "win": {
       "icon": "assets/icon.png",
-      "target": ["nsis", "zip"]
+      "target": [
+        "nsis",
+        "zip"
+      ]
     },
     "nsis": {
       "oneClick": true,
