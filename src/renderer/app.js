@@ -470,8 +470,8 @@ function createItemHTML(item, isCompleted) {
       return `<li data-id="${child.id}" class="sub-item ${child.completed ? 'completed' : ''}">
         <label>
           <input type="checkbox" ${child.completed ? 'checked' : ''}>
-          <span class="item-text">${renderMarkdown(child.text)}</span>
         </label>
+        <span class="item-text">${renderMarkdown(child.text)}</span>
       </li>`;
     }).join('');
     childrenHTML = `<ul class="sub-list">${childItems}</ul>`;
@@ -500,8 +500,8 @@ function createItemHTML(item, isCompleted) {
       <div class="item-row">
         <label>
           <input type="checkbox" ${item.completed ? 'checked' : ''}${isLocked ? ' disabled' : ''}>
-          <span class="item-text">${renderMarkdown(item.text)}</span>
         </label>
+        <span class="item-text">${renderMarkdown(item.text)}</span>
         ${processingIndicator}
         ${addContextBtn}
         ${deleteBtn}
@@ -518,6 +518,22 @@ function createItemHTML(item, isCompleted) {
 }
 
 // ---- Event Handlers ----
+
+// Text selection — temporarily disable draggable so the browser allows
+// normal click-drag text selection instead of initiating a merge drag.
+activeList.addEventListener('mousedown', (e) => {
+  if (isShiftHeld) return;
+  const textEl = e.target.closest('.item-text');
+  if (!textEl) return;
+  const li = textEl.closest('li[draggable="true"]');
+  if (!li) return;
+  li.removeAttribute('draggable');
+  const restore = () => {
+    li.setAttribute('draggable', 'true');
+    document.removeEventListener('mouseup', restore);
+  };
+  document.addEventListener('mouseup', restore);
+});
 
 // Link clicks — open externally and stop propagation (event delegation)
 function handleLinkClick(e) {
