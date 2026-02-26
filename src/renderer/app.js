@@ -702,6 +702,12 @@ activeList.addEventListener('click', (e) => {
   if (e.target.closest('button, textarea')) return;
 
   if (isShiftHeld) {
+    // Prevent the label from forwarding a synthetic click to the checkbox
+    e.preventDefault();
+
+    // Skip the synthetic click dispatched by the label (target is the input)
+    if (e.target.tagName === 'INPUT') return;
+
     const li = e.target.closest('#active-list > li.task-item');
     if (!li || li.classList.contains('locked') || li.classList.contains('completed')) return;
 
@@ -1096,7 +1102,11 @@ function escapeAttr(text) {
 // ---- Dynamic Window Sizing ----
 function adjustWindowHeight() {
   requestAnimationFrame(() => {
+    // Temporarily remove the 100vh constraint so scrollHeight
+    // reports the natural content height, not the viewport height.
+    document.body.style.height = 'auto';
     const height = document.body.scrollHeight;
+    document.body.style.height = '';
     window.api.resizeWindow(height);
   });
 }

@@ -120,7 +120,7 @@ ipcMain.on('resize-window', (_event, height) => {
   const win = mb.window;
   if (win) {
     const [width] = win.getSize();
-    const clamped = Math.min(Math.max(Math.round(height), 120), 600);
+    const clamped = Math.min(Math.max(Math.round(height), 120), 800);
     win.setSize(width, clamped);
   }
 });
