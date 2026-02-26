@@ -435,10 +435,8 @@ li.animate-in {
 .item-row label {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
   cursor: pointer;
-  flex: 1;
-  min-width: 0;
+  flex-shrink: 0;
 }
 
 /* ── Custom Checkbox ── */
@@ -502,6 +500,9 @@ li .item-text {
   word-break: break-word;
   color: var(--text);
   transition: color 0.3s;
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: text;
 }
 
 li.completed .item-text {
@@ -525,6 +526,32 @@ li .item-text em {
   color: var(--text-muted);
 }
 
+li .item-text a.task-link,
+.context-text a.task-link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: var(--border-accent);
+  text-underline-offset: 2px;
+  cursor: pointer;
+  word-break: break-all;
+  transition: opacity 0.15s;
+}
+
+li .item-text a.task-link:hover,
+.context-text a.task-link:hover {
+  opacity: 0.8;
+}
+
+li.completed .item-text a.task-link,
+li.completed .context-text a.task-link {
+  color: var(--completed-text);
+  text-decoration-color: var(--text-dim);
+}
+
+li .item-text em a.task-link {
+  color: var(--accent);
+}
+
 li .item-text code {
   background: var(--surface-hover);
   padding: 1px 5px;
@@ -532,6 +559,8 @@ li .item-text code {
   font-family: var(--font-body);
   font-size: 11.5px;
   border: 1px solid var(--border);
+  user-select: all;
+  -webkit-user-select: all;
 }
 
 /* ── Delete Button (hover only) ── */
@@ -645,6 +674,8 @@ li.task-item:hover .task-context-btn {
 }
 
 .sub-list li.sub-item {
+  flex-direction: row;
+  align-items: flex-start;
   padding: 3px 0 3px 18px;
   margin: 0;
   border-radius: 0;
@@ -687,10 +718,9 @@ li.task-item:hover .task-context-btn {
 .sub-list li.sub-item label {
   display: flex;
   align-items: flex-start;
-  gap: 6px;
   cursor: pointer;
-  flex: 1;
-  min-width: 0;
+  flex-shrink: 0;
+  margin-right: 6px;
 }
 
 .sub-list li.sub-item .item-text {
@@ -724,6 +754,8 @@ li.task-item:hover .task-context-btn {
   font-style: italic;
   line-height: 1.5;
   opacity: 0.65;
+  user-select: text;
+  -webkit-user-select: text;
 }
 
 /* ── Completed Section ── */
