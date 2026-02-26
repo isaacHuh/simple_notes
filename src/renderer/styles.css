@@ -526,7 +526,8 @@ li .item-text em {
   color: var(--text-muted);
 }
 
-li .item-text a.task-link {
+li .item-text a.task-link,
+.context-text a.task-link {
   color: var(--accent);
   text-decoration: underline;
   text-decoration-color: var(--border-accent);
@@ -536,13 +537,19 @@ li .item-text a.task-link {
   transition: opacity 0.15s;
 }
 
-li .item-text a.task-link:hover {
+li .item-text a.task-link:hover,
+.context-text a.task-link:hover {
   opacity: 0.8;
 }
 
-li.completed .item-text a.task-link {
+li.completed .item-text a.task-link,
+li.completed .context-text a.task-link {
   color: var(--completed-text);
   text-decoration-color: var(--text-dim);
+}
+
+li .item-text em a.task-link {
+  color: var(--accent);
 }
 
 li .item-text code {
