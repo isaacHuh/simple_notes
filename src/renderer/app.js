@@ -574,8 +574,86 @@ function renderMarkdown(text) {
 }
 
 // ---- Rendering ----
+
+// Build a fingerprint of all data that affects an item's rendered output.
+// If the fingerprint is unchanged, we skip the DOM replacement entirely.
+function itemFingerprint(item) {
+  return JSON.stringify({
+    t: item.text,
+    c: item.completed,
+    ch: item.children,
+    l: lockedTaskIds.has(item.id),
+    q: queuedMergeIds.has(item.id),
+    s: selectedTaskIds.has(item.id),
+  });
+}
+
+// Reconcile a <ul> to match the desired items list without a full innerHTML
+// wipe. Only adds, removes, reorders, and updates the specific nodes that
+// changed. Returns the set of newly inserted item IDs.
+function reconcileList(listEl, items, isCompleted) {
+  const existingNodes = new Map();
+  for (const li of [...listEl.querySelectorAll(':scope > li.task-item')]) {
+    existingNodes.set(li.dataset.id, li);
+  }
+
+  const desiredSet = new Set(items.map((i) => i.id));
+  const newIds = new Set();
+
+  // Remove nodes that are no longer in the list
+  for (const [id, li] of existingNodes) {
+    if (!desiredSet.has(id)) {
+      li.remove();
+      existingNodes.delete(id);
+    }
+  }
+
+  let prevNode = null;
+
+  for (const item of items) {
+    let li = existingNodes.get(item.id);
+    const isNew = !li;
+    const fp = itemFingerprint(item);
+
+    if (li) {
+      // Existing node — only replace if data changed
+      if (li.dataset.fp !== fp) {
+        const temp = document.createElement('template');
+        temp.innerHTML = createItemHTML(item, isCompleted);
+        const replacement = temp.content.firstElementChild;
+        replacement.dataset.fp = fp;
+        li.replaceWith(replacement);
+        li = replacement;
+        existingNodes.set(item.id, li);
+      }
+    } else {
+      // New node — create it
+      const temp = document.createElement('template');
+      temp.innerHTML = createItemHTML(item, isCompleted);
+      li = temp.content.firstElementChild;
+      li.dataset.fp = fp;
+      existingNodes.set(item.id, li);
+      newIds.add(item.id);
+    }
+
+    // Ensure correct position in the list
+    const expectedNext = prevNode ? prevNode.nextElementSibling : listEl.firstElementChild;
+    if (li !== expectedNext) {
+      if (prevNode) {
+        prevNode.after(li);
+      } else {
+        listEl.prepend(li);
+      }
+    }
+
+    prevNode = li;
+  }
+
+  return newIds;
+}
+
 function renderChecklist(animate = false) {
-  // Preserve any open context textarea state before re-rendering
+  // Preserve any open context textarea state before reconciliation
   const openContextInputs = [];
   activeList.querySelectorAll('.task-context-input:not(.hidden)').forEach((div) => {
     const textarea = div.querySelector('textarea');
@@ -592,10 +670,10 @@ function renderChecklist(animate = false) {
   const active = appData.items.filter((i) => !i.completed);
   const completed = appData.items.filter((i) => i.completed);
 
-  activeList.innerHTML = active.map((item) => createItemHTML(item, false)).join('');
-  completedList.innerHTML = completed.map((item) => createItemHTML(item, true)).join('');
+  const newActiveIds = reconcileList(activeList, active, false);
+  reconcileList(completedList, completed, true);
 
-  // Restore open context textareas
+  // Restore open context textareas (needed if their node was replaced)
   for (const ctx of openContextInputs) {
     const inputDiv = activeList.querySelector(`.task-context-input[data-for="${ctx.taskId}"]`);
     if (inputDiv) {
@@ -609,12 +687,17 @@ function renderChecklist(animate = false) {
     }
   }
 
-  if (animate) {
-    const items = activeList.querySelectorAll(':scope > li');
-    items.forEach((el, i) => {
-      el.classList.add('animate-in');
-      el.style.animationDelay = `${i * 50}ms`;
-    });
+  // Only animate genuinely new items, not the entire list
+  if (animate && newActiveIds.size > 0) {
+    let delay = 0;
+    for (const id of newActiveIds) {
+      const el = activeList.querySelector(`li[data-id="${id}"]`);
+      if (el) {
+        el.classList.add('animate-in');
+        el.style.animationDelay = `${delay * 50}ms`;
+        delay++;
+      }
+    }
   }
 
   completedCount.textContent = completed.length;
@@ -1502,18 +1585,31 @@ function escapeAttr(text) {
 }
 
 // ---- Dynamic Window Sizing ----
+// Compute the natural content height without relying on flex layout.
+// The checklist section's offsetHeight is inflated by flex-grow, so we
+// measure its children directly. Everything else uses offsetHeight.
 function adjustWindowHeight() {
   requestAnimationFrame(() => {
     const cs = document.getElementById('checklist-section');
-    // Temporarily suppress flex-grow on the checklist so it doesn't
-    // inflate to fill the viewport, and drop the 100vh body constraint.
-    // This gives us the true natural content height.
-    cs.style.flex = '0 1 auto';
-    document.body.style.height = 'auto';
-    const height = document.body.scrollHeight;
-    document.body.style.height = '';
-    cs.style.flex = '';
-    window.api.resizeWindow(height);
+    const csStyle = getComputedStyle(cs);
+
+    // Sum the checklist section's actual content height
+    let csHeight = parseFloat(csStyle.paddingTop) + parseFloat(csStyle.paddingBottom);
+    for (const child of cs.children) {
+      if (!child.classList.contains('hidden')) {
+        csHeight += child.offsetHeight;
+      }
+    }
+
+    // Sum all body children, substituting content height for the checklist
+    let total = 0;
+    for (const child of document.body.children) {
+      const style = getComputedStyle(child);
+      if (style.display === 'none' || style.position === 'fixed') continue;
+      total += (child === cs) ? csHeight : child.offsetHeight;
+    }
+
+    window.api.resizeWindow(total);
   });
 }
 
