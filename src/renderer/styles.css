@@ -373,7 +373,7 @@ body {
 #checklist-section {
   flex: 0 1 auto;
   overflow-y: auto;
-  padding: 6px 0;
+  padding: 6px;
   max-height: 340px;
   min-height: 0;
   background: var(--surface);
@@ -406,6 +406,11 @@ li {
   display: flex;
   flex-direction: column;
   transition: background 0.15s;
+}
+
+li.task-item {
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-btn);
 }
 
 li.task-item > .item-row {
@@ -800,7 +805,7 @@ li.task-item:hover .task-context-btn {
 #completed-list {
   max-height: 200px;
   overflow-y: auto;
-  padding-bottom: 6px;
+  padding: 0 6px 6px;
   background: var(--surface);
   transition: background 0.4s ease;
 }
@@ -1076,11 +1081,27 @@ li.task-item.locked > .item-row button {
 .task-processing span:not(.queue-label):nth-child(3) { animation-delay: 0.32s; }
 
 /* ── Selected Task (multi-select) ── */
-li.task-item.selected > .item-row {
+li.task-item.selected {
   background: var(--accent-soft);
-  outline: 1.5px solid var(--accent);
-  outline-offset: -1.5px;
-  border-radius: var(--radius-btn);
+  border-color: var(--accent);
+}
+
+li.task-item.selected > .item-row,
+li.task-item.selected:hover > .item-row {
+  background: transparent;
+}
+
+/* Adjacent selected tasks: merge into a single group outline */
+li.task-item.selected + li.task-item.selected {
+  border-top-color: transparent;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+li.task-item.selected:has(+ li.task-item.selected) {
+  border-bottom-color: transparent;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 /* ── Merge Queued ── */
