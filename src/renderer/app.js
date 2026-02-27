@@ -1585,29 +1585,25 @@ function escapeAttr(text) {
 }
 
 // ---- Dynamic Window Sizing ----
-// Compute the natural content height without relying on flex layout.
-// The checklist section's offsetHeight is inflated by flex-grow, so we
-// measure its children directly. Everything else uses offsetHeight.
+// Temporarily collapse flex layout (body height:auto, checklist flex:none)
+// so every child sits at its natural content height, then read body.offsetHeight.
+// Within a single rAF callback this causes no visible flash (paint hasn't happened).
 function adjustWindowHeight() {
   requestAnimationFrame(() => {
     const cs = document.getElementById('checklist-section');
-    const csStyle = getComputedStyle(cs);
 
-    // Sum the checklist section's actual content height
-    let csHeight = parseFloat(csStyle.paddingTop) + parseFloat(csStyle.paddingBottom);
-    for (const child of cs.children) {
-      if (!child.classList.contains('hidden')) {
-        csHeight += child.offsetHeight;
-      }
-    }
+    // Collapse flex inflation for measurement
+    const prevBodyH = document.body.style.height;
+    const prevCsFlex = cs.style.flex;
+    document.body.style.height = 'auto';
+    cs.style.flex = '0 1 auto';
 
-    // Sum all body children, substituting content height for the checklist
-    let total = 0;
-    for (const child of document.body.children) {
-      const style = getComputedStyle(child);
-      if (style.display === 'none' || style.position === 'fixed') continue;
-      total += (child === cs) ? csHeight : child.offsetHeight;
-    }
+    // offsetHeight forces a synchronous reflow with the collapsed styles
+    const total = document.body.offsetHeight;
+
+    // Restore original styles (browser paints restored state)
+    document.body.style.height = prevBodyH;
+    cs.style.flex = prevCsFlex;
 
     window.api.resizeWindow(total);
   });
