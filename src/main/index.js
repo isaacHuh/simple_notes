@@ -1,4 +1,5 @@
 const { app, ipcMain, Menu, shell } = require('electron');
+const os = require('os');
 const { menubar } = require('menubar');
 const path = require('path');
 const store = require('./store');
@@ -174,6 +175,12 @@ ipcMain.handle('pull-model', async (_event, model) => {
 
 ipcMain.handle('get-platform', () => {
   return process.platform;
+});
+
+ipcMain.handle('get-system-info', () => {
+  return {
+    totalMemoryGB: Math.round(os.totalmem() / (1024 ** 3)),
+  };
 });
 
 app.on('window-all-closed', (e) => {

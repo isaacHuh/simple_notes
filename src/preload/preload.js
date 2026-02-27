@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('api', {
   onPullProgress: (callback) => {
     ipcRenderer.on('pull-progress', (_event, data) => callback(data));
   },
+  getSystemInfo: () => ipcRenderer.invoke('get-system-info'),
   hideWindow: () => ipcRenderer.send('hide-window'),
   resizeWindow: (height) => ipcRenderer.send('resize-window', height),
 });

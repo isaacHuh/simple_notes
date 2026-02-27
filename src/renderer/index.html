@@ -60,6 +60,16 @@
           <path d="M11 8.5A5 5 0 1 1 4.5 2a3.5 3.5 0 0 0 6.5 6.5z"/>
         </svg>
       </button>
+      <button id="model-btn" class="icon-btn" title="Model settings">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
+             stroke="currentColor" stroke-width="1.5"
+             stroke-linecap="round" stroke-linejoin="round">
+          <path d="M2 4h3M9 4h3"/>
+          <circle cx="7" cy="4" r="2" fill="none"/>
+          <path d="M2 10h3M9 10h3"/>
+          <circle cx="7" cy="10" r="2" fill="none"/>
+        </svg>
+      </button>
       <div id="status-indicator" class="status-dot offline" title="Ollama: checking..."></div>
     </div>
   </div>
@@ -73,6 +83,56 @@
     <div class="history-scroll">
       <ul id="history-list"></ul>
       <div id="history-empty" class="hidden">no history yet</div>
+    </div>
+  </div>
+
+  <!-- Model selection panel (inline, below title bar) -->
+  <div id="model-panel" class="hidden">
+    <div class="model-panel-header">
+      <span>MODEL</span>
+      <button id="model-panel-close">&times;</button>
+    </div>
+    <div class="model-options">
+      <label class="model-option" data-tier="low">
+        <input type="radio" name="model-tier" value="low">
+        <div class="model-option-content">
+          <div class="model-option-top">
+            <span class="model-option-label">Low</span>
+            <span class="model-option-size">~1.6 GB</span>
+          </div>
+          <span class="model-option-name">exaone3.5:2.4b</span>
+          <span class="model-option-desc">Fast and light, best format adherence at this size</span>
+        </div>
+      </label>
+      <label class="model-option" data-tier="medium">
+        <input type="radio" name="model-tier" value="medium">
+        <div class="model-option-content">
+          <div class="model-option-top">
+            <span class="model-option-label">Medium</span>
+            <span class="model-option-size">~3.3 GB</span>
+          </div>
+          <span class="model-option-name">gemma3:4b</span>
+          <span class="model-option-desc">Best instruction following at this size</span>
+        </div>
+      </label>
+      <label class="model-option" data-tier="high">
+        <input type="radio" name="model-tier" value="high">
+        <div class="model-option-content">
+          <div class="model-option-top">
+            <span class="model-option-label">High</span>
+            <span class="model-option-size">~5 GB</span>
+          </div>
+          <span class="model-option-name">qwen3:8b</span>
+          <span class="model-option-desc">Best quality, slower on low-end hardware</span>
+        </div>
+      </label>
+    </div>
+    <div id="model-pull-section" class="hidden">
+      <div class="model-pull-status">
+        <span id="model-pull-label">Downloading model...</span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="model-pull-progress-fill"></div></div>
+      <span class="progress-text" id="model-pull-progress-text"></span>
     </div>
   </div>
 
