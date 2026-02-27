@@ -11,6 +11,59 @@ const assetsPath = isDev
   ? path.join(__dirname, '../../assets')
   : path.join(process.resourcesPath, 'assets');
 
+// ── Update Check ──
+const REPO_OWNER = 'isaacHuh';
+const REPO_NAME = 'simple_notes';
+let updateState = { status: 'idle', latestVersion: null, downloadUrl: null };
+// status: 'idle' | 'checking' | 'up-to-date' | 'update-available' | 'error'
+
+async function checkForUpdate() {
+  updateState = { status: 'checking', latestVersion: null, downloadUrl: null };
+  rebuildContextMenu();
+
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/releases/latest`,
+      { headers: { 'Accept': 'application/vnd.github.v3+json', 'User-Agent': 'Sticky-App' } }
+    );
+
+    if (!res.ok) {
+      updateState = { status: 'error', latestVersion: null, downloadUrl: null };
+      rebuildContextMenu();
+      return updateState;
+    }
+
+    const release = await res.json();
+    const latestTag = release.tag_name || '';
+    const latestVersion = latestTag.replace(/^v/, '');
+    const currentVersion = app.getVersion();
+    const downloadUrl = release.html_url;
+
+    if (isNewerVersion(latestVersion, currentVersion)) {
+      updateState = { status: 'update-available', latestVersion, downloadUrl };
+    } else {
+      updateState = { status: 'up-to-date', latestVersion, downloadUrl: null };
+    }
+  } catch {
+    updateState = { status: 'error', latestVersion: null, downloadUrl: null };
+  }
+
+  rebuildContextMenu();
+  return updateState;
+}
+
+function isNewerVersion(latest, current) {
+  const latestParts = latest.split('.').map(Number);
+  const currentParts = current.split('.').map(Number);
+  for (let i = 0; i < Math.max(latestParts.length, currentParts.length); i++) {
+    const l = latestParts[i] || 0;
+    const c = currentParts[i] || 0;
+    if (l > c) return true;
+    if (l < c) return false;
+  }
+  return false;
+}
+
 const mb = menubar({
   index: `file://${path.join(__dirname, '../renderer/index.html')}`,
   icon: path.join(assetsPath, 'IconTemplate.png'),
@@ -32,24 +85,64 @@ const mb = menubar({
   },
 });
 
+let currentContextMenu = null;
+
+function rebuildContextMenu() {
+  if (!mb.tray) return;
+
+  let updateItem;
+  switch (updateState.status) {
+    case 'checking':
+      updateItem = { label: 'Checking for Updates...', enabled: false };
+      break;
+    case 'update-available':
+      updateItem = {
+        label: `Update Available (v${updateState.latestVersion})`,
+        click: () => {
+          if (updateState.downloadUrl) {
+            shell.openExternal(updateState.downloadUrl);
+          }
+        },
+      };
+      break;
+    case 'up-to-date':
+      updateItem = { label: 'Up to Date', enabled: false };
+      break;
+    case 'error':
+      updateItem = { label: 'Check for Updates', click: () => checkForUpdate() };
+      break;
+    default:
+      updateItem = { label: 'Check for Updates', click: () => checkForUpdate() };
+      break;
+  }
+
+  currentContextMenu = Menu.buildFromTemplate([
+    { label: 'Open', click: () => mb.showWindow() },
+    { type: 'separator' },
+    updateItem,
+    { type: 'separator' },
+    { label: 'Preferences...', enabled: false },
+    { type: 'separator' },
+    { label: 'Quit Sticky', click: () => app.quit() },
+  ]);
+}
+
 mb.on('ready', () => {
   // Hide dock icon on macOS
   if (app.dock) {
     app.dock.hide();
   }
 
-  // Right-click context menu on tray
-  const contextMenu = Menu.buildFromTemplate([
-    { label: 'Open', click: () => mb.showWindow() },
-    { type: 'separator' },
-    { label: 'Preferences...', enabled: false },
-    { type: 'separator' },
-    { label: 'Quit Sticky', click: () => app.quit() },
-  ]);
-
+  // Set up right-click handler once, referencing the current menu
   mb.tray.on('right-click', () => {
-    mb.tray.popUpContextMenu(contextMenu);
+    if (currentContextMenu) {
+      mb.tray.popUpContextMenu(currentContextMenu);
+    }
   });
+
+  // Build initial context menu and check for updates
+  rebuildContextMenu();
+  checkForUpdate();
 });
 
 // --- IPC Handlers ---
@@ -181,6 +274,18 @@ ipcMain.handle('get-system-info', () => {
   return {
     totalMemoryGB: Math.round(os.totalmem() / (1024 ** 3)),
   };
+});
+
+ipcMain.handle('check-for-updates', async () => {
+  return checkForUpdate();
+});
+
+ipcMain.handle('get-update-status', () => {
+  return updateState;
+});
+
+ipcMain.handle('get-app-version', () => {
+  return app.getVersion();
 });
 
 app.on('window-all-closed', (e) => {
