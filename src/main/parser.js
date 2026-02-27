@@ -8,8 +8,10 @@ function parseChecklist(markdownText) {
     const subMatch = line.match(/^(?:\t| {2,})[-*]\s*\[([ xX])\]\s*(.+)/);
     // Check for indented context note without checkbox (2+ spaces or tab before the marker)
     const contextMatch = line.match(/^(?:\t| {2,})[-*]\s+(?!\[[ xX]\])(.+)/);
-    // Check for top-level item
+    // Check for top-level item with checkbox
     const topMatch = line.match(/^[-*]\s*\[([ xX])\]\s*(.+)/);
+    // Fallback: top-level item without checkbox (e.g. "- Some task" or "- **Bold task**")
+    const topFallback = !topMatch ? line.match(/^[-*]\s+(?!\[[ xX]\])(.+)/) : null;
 
     if (subMatch && currentParent) {
       currentParent.children.push({
@@ -32,6 +34,17 @@ function parseChecklist(markdownText) {
         id: generateId(),
         text: topMatch[2].trim(),
         completed: topMatch[1].toLowerCase() === 'x',
+        children: [],
+        createdAt: new Date().toISOString(),
+      };
+      items.push(currentParent);
+    } else if (topFallback) {
+      // Model omitted checkbox — treat as unchecked task (strip bold markers)
+      const text = topFallback[1].trim().replace(/^\*\*(.+)\*\*$/, '$1');
+      currentParent = {
+        id: generateId(),
+        text,
+        completed: false,
         children: [],
         createdAt: new Date().toISOString(),
       };

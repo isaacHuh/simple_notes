@@ -1,3 +1,10 @@
+// ---- Model Tiers ----
+const MODEL_TIERS = {
+  low:    { model: 'exaone3.5:2.4b', label: 'Low', desc: 'Fast and light, best format adherence at this size', size: '~1.6 GB' },
+  medium: { model: 'gemma3:4b',  label: 'Medium', desc: 'Best instruction following at this size', size: '~3.3 GB' },
+  high:   { model: 'qwen3:8b',  label: 'High',   desc: 'Best quality, slower on low-end hardware', size: '~5 GB' },
+};
+
 // ---- State ----
 let appData = { items: [], versions: [], redoVersions: [], settings: {} };
 let noteQueue = [];
@@ -42,6 +49,13 @@ const historyClose = document.getElementById('history-close');
 const dragHandle = document.getElementById('drag-handle');
 const clearCompletedBtn = document.getElementById('clear-completed');
 const redoBtn = document.getElementById('redo-btn');
+const modelBtn = document.getElementById('model-btn');
+const modelPanel = document.getElementById('model-panel');
+const modelPanelClose = document.getElementById('model-panel-close');
+const modelPullSection = document.getElementById('model-pull-section');
+const modelPullLabel = document.getElementById('model-pull-label');
+const modelPullProgressFill = document.getElementById('model-pull-progress-fill');
+const modelPullProgressText = document.getElementById('model-pull-progress-text');
 
 // ---- SVG Icons ----
 const ICON_PLUS = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -78,7 +92,7 @@ function setStepStatus(stepEl, status) {
 }
 
 async function runSetupCheck() {
-  const model = appData.settings.ollamaModel || 'qwen3:8b';
+  const model = appData.settings.ollamaModel || 'exaone3.5:2.4b';
   stepModelLabel.textContent = `Model ready (${model})`;
 
   // Step 1: Check Ollama server
@@ -113,7 +127,7 @@ async function runSetupCheck() {
 
   try {
     const models = await window.api.listModels();
-    const hasModel = models.some((m) => m === model || m.startsWith(model.split(':')[0] + ':'));
+    const hasModel = models.some((m) => m === model);
 
     if (hasModel) {
       setStepStatus(stepModel, 'pass');
@@ -139,9 +153,9 @@ async function needsSetup() {
     const ollamaOk = await window.api.checkOllama();
     if (!ollamaOk) return true;
 
-    const model = appData.settings.ollamaModel || 'qwen3:8b';
+    const model = appData.settings.ollamaModel || 'exaone3.5:2.4b';
     const models = await window.api.listModels();
-    return !models.some((m) => m === model || m.startsWith(model.split(':')[0] + ':'));
+    return !models.some((m) => m === model);
   } catch {
     return true;
   }
@@ -160,7 +174,7 @@ document.getElementById('btn-recheck-ollama').addEventListener('click', () => {
 });
 
 document.getElementById('btn-pull-model').addEventListener('click', async () => {
-  const model = appData.settings.ollamaModel || 'qwen3:8b';
+  const model = appData.settings.ollamaModel || 'exaone3.5:2.4b';
   stepModelActions.classList.add('hidden');
   stepModelHint.classList.add('hidden');
   stepModelProgress.classList.remove('hidden');
@@ -182,16 +196,7 @@ document.getElementById('btn-pull-model').addEventListener('click', async () => 
   }
 });
 
-window.api.onPullProgress((data) => {
-  if (data.total && data.completed) {
-    const pct = Math.round((data.completed / data.total) * 100);
-    pullProgressFill.style.width = `${pct}%`;
-    const mb = (n) => (n / 1024 / 1024).toFixed(0);
-    pullProgressText.textContent = `${data.status || 'Downloading'}... ${mb(data.completed)} / ${mb(data.total)} MB (${pct}%)`;
-  } else if (data.status) {
-    pullProgressText.textContent = data.status;
-  }
-});
+// Pull progress is handled by the consolidated handler in the Model Selection Panel section above.
 
 document.getElementById('btn-setup-done').addEventListener('click', () => {
   setupWizard.classList.add('hidden');
@@ -213,6 +218,15 @@ async function init() {
   if (!appData.versions) appData.versions = [];
   if (!appData.redoVersions) appData.redoVersions = [];
   if (!appData.inputHistory) appData.inputHistory = [];
+
+  // Auto-detect model tier on first launch (no modelTier saved yet)
+  if (!appData.settings.modelTier) {
+    const tier = await autoDetectModelTier();
+    appData.settings.modelTier = tier;
+    appData.settings.ollamaModel = MODEL_TIERS[tier].model;
+    await save();
+  }
+
   applyTheme(appData.settings.theme || 'dark');
   renderChecklist(true);
   updateUndoButton();
@@ -283,6 +297,7 @@ function toggleHistoryPanel() {
   if (isOpen) {
     closeHistoryPanel();
   } else {
+    closeModelPanel();
     renderHistory();
     historyPanel.classList.remove('hidden');
     historyBtn.classList.add('active');
@@ -313,6 +328,129 @@ historyList.addEventListener('click', (e) => {
     setTimeout(() => noteInput.focus(), 50);
   }
 });
+
+// ---- Model Selection Panel ----
+function getTierForModel(modelName) {
+  for (const [tier, info] of Object.entries(MODEL_TIERS)) {
+    if (info.model === modelName) return tier;
+  }
+  return null;
+}
+
+function updateModelPanel() {
+  const currentModel = appData.settings.ollamaModel || 'exaone3.5:2.4b';
+  const currentTier = getTierForModel(currentModel);
+  const radios = modelPanel.querySelectorAll('input[name="model-tier"]');
+  radios.forEach((radio) => {
+    radio.checked = radio.value === currentTier;
+    const label = radio.closest('.model-option');
+    label.classList.toggle('active', radio.value === currentTier);
+  });
+}
+
+function toggleModelPanel() {
+  const isOpen = !modelPanel.classList.contains('hidden');
+  if (isOpen) {
+    closeModelPanel();
+  } else {
+    closeHistoryPanel();
+    updateModelPanel();
+    modelPanel.classList.remove('hidden');
+    modelBtn.classList.add('active');
+    adjustWindowHeight();
+  }
+}
+
+function closeModelPanel() {
+  modelPanel.classList.add('hidden');
+  modelBtn.classList.remove('active');
+  modelPullSection.classList.add('hidden');
+  adjustWindowHeight();
+}
+
+async function selectModelTier(tier) {
+  const tierInfo = MODEL_TIERS[tier];
+  if (!tierInfo) return;
+
+  appData.settings.ollamaModel = tierInfo.model;
+  appData.settings.modelTier = tier;
+  await save();
+  updateModelPanel();
+
+  // Check if the model is already available
+  try {
+    const models = await window.api.listModels();
+    const hasModel = models.some((m) => m === tierInfo.model);
+    if (!hasModel) {
+      // Need to pull the model
+      modelPullSection.classList.remove('hidden');
+      modelPullLabel.textContent = `Downloading ${tierInfo.model}...`;
+      modelPullProgressFill.style.width = '0%';
+      modelPullProgressText.textContent = 'Starting download...';
+      adjustWindowHeight();
+
+      try {
+        await window.api.pullModel(tierInfo.model);
+        modelPullSection.classList.add('hidden');
+        adjustWindowHeight();
+      } catch (err) {
+        modelPullLabel.textContent = `Failed to download ${tierInfo.model}`;
+        modelPullProgressText.textContent = err.message;
+      }
+    }
+  } catch {
+    // Ollama not running, that's ok — model will be pulled later
+  }
+}
+
+modelBtn.addEventListener('click', toggleModelPanel);
+modelPanelClose.addEventListener('click', closeModelPanel);
+
+modelPanel.addEventListener('change', (e) => {
+  if (e.target.name === 'model-tier') {
+    selectModelTier(e.target.value);
+  }
+});
+
+// Reuse pull-progress handler for model panel downloads
+window.api.onPullProgress((data) => {
+  // Update setup wizard progress if visible
+  if (!stepModelProgress.classList.contains('hidden')) {
+    if (data.total && data.completed) {
+      const pct = Math.round((data.completed / data.total) * 100);
+      pullProgressFill.style.width = `${pct}%`;
+      const mb = (n) => (n / 1024 / 1024).toFixed(0);
+      pullProgressText.textContent = `${data.status || 'Downloading'}... ${mb(data.completed)} / ${mb(data.total)} MB (${pct}%)`;
+    } else if (data.status) {
+      pullProgressText.textContent = data.status;
+    }
+  }
+
+  // Update model panel progress if visible
+  if (!modelPullSection.classList.contains('hidden')) {
+    if (data.total && data.completed) {
+      const pct = Math.round((data.completed / data.total) * 100);
+      modelPullProgressFill.style.width = `${pct}%`;
+      const mb = (n) => (n / 1024 / 1024).toFixed(0);
+      modelPullProgressText.textContent = `${data.status || 'Downloading'}... ${mb(data.completed)} / ${mb(data.total)} MB (${pct}%)`;
+    } else if (data.status) {
+      modelPullProgressText.textContent = data.status;
+    }
+  }
+});
+
+// ---- Auto-detect Model Tier ----
+async function autoDetectModelTier() {
+  try {
+    const info = await window.api.getSystemInfo();
+    const ram = info.totalMemoryGB;
+    if (ram <= 8) return 'low';
+    if (ram <= 16) return 'medium';
+    return 'high';
+  } catch {
+    return 'medium'; // safe default
+  }
+}
 
 // ---- Version History ----
 function pushVersion() {
@@ -1140,7 +1278,7 @@ function handleOllamaError(err) {
   if (err.message.includes('fetch') || err.message.includes('ECONNREFUSED')) {
     showError('Ollama is not running. Start it with: ollama serve');
   } else if (err.message.includes('404') || err.message.includes('not found')) {
-    const model = appData.settings.ollamaModel || 'qwen3:8b';
+    const model = appData.settings.ollamaModel || 'exaone3.5:2.4b';
     showError(`Model not found. Run: ollama pull ${model}`);
   } else {
     showError(err.message);
