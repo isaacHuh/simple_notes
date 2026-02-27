@@ -135,11 +135,13 @@ mb.on('ready', () => {
     app.dock.hide();
   }
 
-  // Track manual window resizes by the user (not our auto-resize calls)
+  // Track manual window resizes by the user (not our auto-resize calls).
+  // autoResizeTimer is non-null for 150ms after each programmatic resize,
+  // so any resize events within that window are ignored.
   const win = mb.window;
   if (win) {
     win.on('resize', () => {
-      if (!isAutoResizing) {
+      if (!autoResizeTimer) {
         const [, h] = win.getSize();
         userHeight = h;
       }
@@ -226,7 +228,7 @@ ipcMain.on('hide-window', () => {
 // Track whether the user has manually resized the window.
 // When they have, auto-height uses their height as a minimum floor.
 let userHeight = null;
-let isAutoResizing = false;
+let autoResizeTimer = null;
 
 ipcMain.on('resize-window', (_event, height) => {
   const win = mb.window;
@@ -234,9 +236,11 @@ ipcMain.on('resize-window', (_event, height) => {
     const [width] = win.getSize();
     const minH = userHeight || 120;
     const clamped = Math.max(Math.round(height), minH);
-    isAutoResizing = true;
+    // Mark auto-resize window: suppress user-resize tracking for a short
+    // period since Electron fires the 'resize' event asynchronously.
+    clearTimeout(autoResizeTimer);
+    autoResizeTimer = setTimeout(() => { autoResizeTimer = null; }, 150);
     win.setSize(width, clamped);
-    isAutoResizing = false;
   }
 });
 

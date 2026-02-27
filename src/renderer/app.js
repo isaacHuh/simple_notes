@@ -575,11 +575,39 @@ function renderMarkdown(text) {
 
 // ---- Rendering ----
 function renderChecklist(animate = false) {
+  // Preserve any open context textarea state before re-rendering
+  const openContextInputs = [];
+  activeList.querySelectorAll('.task-context-input:not(.hidden)').forEach((div) => {
+    const textarea = div.querySelector('textarea');
+    if (textarea) {
+      openContextInputs.push({
+        taskId: div.dataset.for,
+        value: textarea.value,
+        selStart: textarea.selectionStart,
+        selEnd: textarea.selectionEnd,
+      });
+    }
+  });
+
   const active = appData.items.filter((i) => !i.completed);
   const completed = appData.items.filter((i) => i.completed);
 
   activeList.innerHTML = active.map((item) => createItemHTML(item, false)).join('');
   completedList.innerHTML = completed.map((item) => createItemHTML(item, true)).join('');
+
+  // Restore open context textareas
+  for (const ctx of openContextInputs) {
+    const inputDiv = activeList.querySelector(`.task-context-input[data-for="${ctx.taskId}"]`);
+    if (inputDiv) {
+      inputDiv.classList.remove('hidden');
+      const textarea = inputDiv.querySelector('textarea');
+      if (textarea) {
+        textarea.value = ctx.value;
+        textarea.selectionStart = ctx.selStart;
+        textarea.selectionEnd = ctx.selEnd;
+      }
+    }
+  }
 
   if (animate) {
     const items = activeList.querySelectorAll(':scope > li');
