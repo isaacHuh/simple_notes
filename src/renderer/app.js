@@ -1504,11 +1504,15 @@ function escapeAttr(text) {
 // ---- Dynamic Window Sizing ----
 function adjustWindowHeight() {
   requestAnimationFrame(() => {
-    // Temporarily remove the 100vh constraint so scrollHeight
-    // reports the natural content height, not the viewport height.
+    const cs = document.getElementById('checklist-section');
+    // Temporarily suppress flex-grow on the checklist so it doesn't
+    // inflate to fill the viewport, and drop the 100vh body constraint.
+    // This gives us the true natural content height.
+    cs.style.flex = '0 1 auto';
     document.body.style.height = 'auto';
     const height = document.body.scrollHeight;
     document.body.style.height = '';
+    cs.style.flex = '';
     window.api.resizeWindow(height);
   });
 }

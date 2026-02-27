@@ -766,8 +766,7 @@ li.task-item:hover .task-context-btn {
 /* ── Completed Section ── */
 #completed-section {
   border-top: 1px solid var(--border);
-  flex-shrink: 1;
-  overflow: hidden;
+  flex-shrink: 0;
   transition: border-color 0.3s;
 }
 
