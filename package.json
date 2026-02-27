@@ -1,7 +1,7 @@
 {
   "name": "simple-notes",
   "productName": "Sticky",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "A menu bar note-taking app with local AI powered by Ollama",
   "license": "MIT",
   "author": "isaacHuh",
