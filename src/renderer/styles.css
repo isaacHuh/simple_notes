@@ -1078,9 +1078,24 @@ li.task-item.locked > .item-row button {
 /* ── Selected Task (multi-select) ── */
 li.task-item.selected > .item-row {
   background: var(--accent-soft);
-  outline: 1.5px solid var(--accent);
-  outline-offset: -1.5px;
+  border: 1.5px solid var(--accent);
+  padding: 7.5px 12.5px;
   border-radius: var(--radius-btn);
+}
+
+/* Adjacent selected tasks: merge into a single group outline */
+li.task-item.selected + li.task-item.selected > .item-row {
+  border-top: none;
+  padding-top: 9px;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+li.task-item.selected:has(+ li.task-item.selected) > .item-row {
+  border-bottom: none;
+  padding-bottom: 9px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 /* ── Merge Queued ── */
