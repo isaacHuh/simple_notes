@@ -371,10 +371,9 @@ body {
 
 /* ── Checklist Section ── */
 #checklist-section {
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   overflow-y: auto;
   padding: 6px;
-  max-height: 340px;
   min-height: 0;
   background: var(--surface);
   transition: background 0.4s ease;
@@ -420,6 +419,7 @@ li.task-item > .item-row {
   padding: 9px 14px;
   border-radius: var(--radius-btn);
   transition: background 0.15s;
+  position: relative;
 }
 
 li.task-item:hover > .item-row {
@@ -1139,17 +1139,19 @@ li.task-item.locked .drag-handle {
 
 /* ── Drag Handle ── */
 .drag-handle {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  flex-shrink: 0;
+  width: 14px;
+  height: 100%;
   color: var(--text-dim);
   cursor: grab;
   opacity: 0;
   transition: opacity 0.15s, color 0.15s;
-  margin-top: 3px;
-  margin-left: -4px;
 }
 
 li.task-item:hover .drag-handle {
@@ -1678,6 +1680,35 @@ li.drop-below::after {
   font-size: 11px;
   color: var(--accent);
   font-weight: 500;
+}
+
+/* ── Resize Grip ── */
+#resize-grip {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  width: 14px;
+  height: 14px;
+  cursor: nwse-resize;
+  -webkit-app-region: no-drag;
+  z-index: 50;
+}
+
+#resize-grip::after {
+  content: '';
+  position: absolute;
+  bottom: 3px;
+  right: 3px;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid var(--text-dim);
+  border-bottom: 1.5px solid var(--text-dim);
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+
+#resize-grip:hover::after {
+  opacity: 1;
 }
 
 /* ── Context Menu ── */
