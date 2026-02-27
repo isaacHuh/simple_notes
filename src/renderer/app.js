@@ -16,6 +16,7 @@ let mergeQueue = [];
 let queuedMergeIds = new Set();
 let isShiftHeld = false;
 let isSelecting = false;
+let dropMode = null;       // 'merge' | 'reorder-above' | 'reorder-below'
 
 document.addEventListener('keydown', (e) => { if (e.key === 'Shift') isShiftHeld = true; });
 document.addEventListener('keyup', (e) => { if (e.key === 'Shift') isShiftHeld = false; });
@@ -56,10 +57,22 @@ const modelPullSection = document.getElementById('model-pull-section');
 const modelPullLabel = document.getElementById('model-pull-label');
 const modelPullProgressFill = document.getElementById('model-pull-progress-fill');
 const modelPullProgressText = document.getElementById('model-pull-progress-text');
+const contextMenu = document.getElementById('context-menu');
+const ctxMerge = document.getElementById('ctx-merge');
+const ctxDelete = document.getElementById('ctx-delete');
 
 // ---- SVG Icons ----
 const ICON_PLUS = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
   <path d="M6 2v8M2 6h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+</svg>`;
+
+const ICON_GRIP = `<svg width="6" height="10" viewBox="0 0 6 10" fill="currentColor">
+  <circle cx="1.5" cy="1.5" r="1"/>
+  <circle cx="4.5" cy="1.5" r="1"/>
+  <circle cx="1.5" cy="5" r="1"/>
+  <circle cx="4.5" cy="5" r="1"/>
+  <circle cx="1.5" cy="8.5" r="1"/>
+  <circle cx="4.5" cy="8.5" r="1"/>
 </svg>`;
 
 // ---- Setup Wizard ----
@@ -634,8 +647,13 @@ function createItemHTML(item, isCompleted) {
   const lockedClass = isLocked ? ' locked' : '';
   const selectedClass = selectedTaskIds.has(item.id) ? ' selected' : '';
 
+  const dragHandleHTML = !isCompleted && !isLocked
+    ? `<span class="drag-handle" title="Drag to reorder or merge">${ICON_GRIP}</span>`
+    : '';
+
   return `<li data-id="${item.id}" class="task-item ${isCompleted ? 'completed' : ''}${lockedClass}${selectedClass}"${draggable}>
       <div class="item-row">
+        ${dragHandleHTML}
         <label>
           <input type="checkbox" ${item.completed ? 'checked' : ''}${isLocked ? ' disabled' : ''}>
         </label>
@@ -657,13 +675,13 @@ function createItemHTML(item, isCompleted) {
 
 // ---- Event Handlers ----
 
-// Text selection — temporarily disable draggable so the browser allows
-// normal click-drag text selection instead of initiating a merge drag.
+// Only allow drag initiation from the drag handle — disable draggable
+// when mousedown is on anything else so text selection works naturally.
 activeList.addEventListener('mousedown', (e) => {
   if (isShiftHeld) return;
-  const textEl = e.target.closest('.item-text');
-  if (!textEl) return;
-  const li = textEl.closest('li[draggable="true"]');
+  const handle = e.target.closest('.drag-handle');
+  if (handle) return; // Allow drag from handle
+  const li = e.target.closest('li[draggable="true"]');
   if (!li) return;
   li.removeAttribute('draggable');
   const restore = () => {
@@ -751,31 +769,102 @@ async function handleItemClick(e) {
   }
 }
 
-// Right-click to delete (keep as alternative)
+// ---- Context Menu ----
+let ctxTargetId = null;
+let ctxIsSubItem = false;
+let ctxParentId = null;
+
+function showContextMenu(x, y) {
+  // Make visible off-screen to measure, then position
+  contextMenu.style.left = '-9999px';
+  contextMenu.style.top = '-9999px';
+  contextMenu.classList.remove('hidden');
+
+  const rect = contextMenu.getBoundingClientRect();
+  const maxX = window.innerWidth - rect.width - 4;
+  const maxY = window.innerHeight - rect.height - 4;
+  contextMenu.style.left = `${Math.min(x, maxX)}px`;
+  contextMenu.style.top = `${Math.min(y, maxY)}px`;
+}
+
+function hideContextMenu() {
+  contextMenu.classList.add('hidden');
+  ctxTargetId = null;
+  ctxIsSubItem = false;
+  ctxParentId = null;
+}
+
+// Dismiss context menu on any click or Escape
+document.addEventListener('click', hideContextMenu);
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') hideContextMenu(); });
+
 activeList.addEventListener('contextmenu', handleItemContextMenu);
 completedList.addEventListener('contextmenu', handleItemContextMenu);
 
-async function handleItemContextMenu(e) {
+function handleItemContextMenu(e) {
   const li = e.target.closest('li');
   if (!li) return;
   e.preventDefault();
-  const id = li.dataset.id;
 
-  if (li.classList.contains('sub-item')) {
+  const id = li.dataset.id;
+  ctxTargetId = id;
+  ctxIsSubItem = li.classList.contains('sub-item');
+  ctxParentId = null;
+
+  if (ctxIsSubItem) {
     const parentLi = li.closest('li:not(.sub-item)');
-    if (parentLi) {
-      const parentId = parentLi.dataset.id;
-      const parent = appData.items.find((i) => i.id === parentId);
-      if (parent && parent.children) {
-        const child = parent.children.find((c) => c.id === id);
-        if (child && await showConfirm(`Delete "${child.text}"?`)) {
-          parent.children = parent.children.filter((c) => c.id !== id);
-          save();
-          renderChecklist();
-          return;
-        }
+    if (parentLi) ctxParentId = parentLi.dataset.id;
+  }
+
+  // If right-clicking on a non-selected active task, include it in selection context
+  const isActive = li.closest('#active-list') !== null;
+  if (isActive && !ctxIsSubItem && !li.classList.contains('locked')) {
+    if (!selectedTaskIds.has(id)) {
+      // If there's an existing selection, the user right-clicked outside it — focus on this one
+      selectedTaskIds.clear();
+      activeList.querySelectorAll('.selected').forEach((el) => el.classList.remove('selected'));
+    }
+  }
+
+  // Show merge option if we have 2+ selected active tasks (or selected + right-clicked)
+  const mergeableIds = new Set(selectedTaskIds);
+  if (isActive && !ctxIsSubItem && !li.classList.contains('locked') && !li.classList.contains('completed')) {
+    mergeableIds.add(id);
+  }
+
+  if (mergeableIds.size >= 2) {
+    ctxMerge.textContent = `Merge ${mergeableIds.size} tasks`;
+    ctxMerge.classList.remove('hidden');
+  } else {
+    ctxMerge.classList.add('hidden');
+  }
+
+  showContextMenu(e.clientX, e.clientY);
+}
+
+// Context menu: Delete
+ctxDelete.addEventListener('click', async (e) => {
+  e.stopPropagation();
+
+  // Capture values before hideContextMenu clears them
+  const id = ctxTargetId;
+  const isSubItem = ctxIsSubItem;
+  const parentId = ctxParentId;
+  hideContextMenu();
+
+  if (!id) return;
+
+  if (isSubItem && parentId) {
+    const parent = appData.items.find((i) => i.id === parentId);
+    if (parent && parent.children) {
+      const child = parent.children.find((c) => c.id === id);
+      if (child && await showConfirm(`Delete "${child.text}"?`)) {
+        parent.children = parent.children.filter((c) => c.id !== id);
+        save();
+        renderChecklist();
       }
     }
+    return;
   }
 
   const item = appData.items.find((i) => i.id === id);
@@ -784,7 +873,37 @@ async function handleItemContextMenu(e) {
     save();
     renderChecklist();
   }
-}
+});
+
+// Context menu: Merge selected
+ctxMerge.addEventListener('click', async (e) => {
+  e.stopPropagation();
+
+  // Capture target before hideContextMenu clears it
+  const targetForMerge = ctxTargetId;
+  hideContextMenu();
+
+  // Collect all mergeable IDs (selected + right-click target)
+  const mergeIds = new Set(selectedTaskIds);
+  if (targetForMerge) mergeIds.add(targetForMerge);
+
+  const ids = [...mergeIds].filter((id) => {
+    const item = appData.items.find((i) => i.id === id);
+    return item && !item.completed && !lockedTaskIds.has(id);
+  });
+
+  if (ids.length < 2) return;
+
+  // Use the last item as the "target" (where merged result will appear)
+  const targetId = ids.pop();
+  const sourceIds = ids;
+
+  if (sourceIds.length === 1) {
+    await handleMerge(sourceIds[0], targetId);
+  } else {
+    await handleMultiMerge(sourceIds, targetId);
+  }
+});
 
 // Per-task context button (event delegation)
 activeList.addEventListener('click', (e) => {
@@ -962,8 +1081,11 @@ activeList.addEventListener('dragstart', (e) => {
 
 activeList.addEventListener('dragend', () => {
   activeList.querySelectorAll('.dragging').forEach((el) => el.classList.remove('dragging'));
-  activeList.querySelectorAll('.drop-target').forEach((el) => el.classList.remove('drop-target'));
+  activeList.querySelectorAll('.drop-target, .drop-above, .drop-below').forEach((el) => {
+    el.classList.remove('drop-target', 'drop-above', 'drop-below');
+  });
   dragSourceIds.clear();
+  dropMode = null;
 });
 
 activeList.addEventListener('dragover', (e) => {
@@ -971,14 +1093,34 @@ activeList.addEventListener('dragover', (e) => {
   if (!li || dragSourceIds.has(li.dataset.id)) return;
   e.preventDefault();
   e.dataTransfer.dropEffect = 'move';
-  activeList.querySelectorAll('.drop-target').forEach((el) => el.classList.remove('drop-target'));
-  li.classList.add('drop-target');
+
+  // Clear previous indicators
+  activeList.querySelectorAll('.drop-target, .drop-above, .drop-below').forEach((el) => {
+    el.classList.remove('drop-target', 'drop-above', 'drop-below');
+  });
+
+  // Determine zone: top 25% = reorder above, bottom 25% = reorder below, middle = merge
+  const rect = li.getBoundingClientRect();
+  const y = e.clientY - rect.top;
+  const ratio = y / rect.height;
+
+  if (ratio < 0.25) {
+    dropMode = 'reorder-above';
+    li.classList.add('drop-above');
+  } else if (ratio > 0.75) {
+    dropMode = 'reorder-below';
+    li.classList.add('drop-below');
+  } else {
+    dropMode = 'merge';
+    li.classList.add('drop-target');
+  }
 });
 
 activeList.addEventListener('dragleave', (e) => {
   const li = e.target.closest('#active-list > li');
   if (li && !li.contains(e.relatedTarget)) {
-    li.classList.remove('drop-target');
+    li.classList.remove('drop-target', 'drop-above', 'drop-below');
+    dropMode = null;
   }
 });
 
@@ -986,12 +1128,21 @@ activeList.addEventListener('drop', async (e) => {
   e.preventDefault();
   const targetLi = e.target.closest('#active-list > li');
   if (!targetLi || dragSourceIds.has(targetLi.dataset.id)) return;
-  targetLi.classList.remove('drop-target');
+  targetLi.classList.remove('drop-target', 'drop-above', 'drop-below');
 
   const sourceIds = [...dragSourceIds];
   const targetId = targetLi.dataset.id;
+  const currentDropMode = dropMode;
   dragSourceIds.clear();
+  dropMode = null;
 
+  // Reorder mode — move tasks to new position
+  if (currentDropMode === 'reorder-above' || currentDropMode === 'reorder-below') {
+    handleReorder(sourceIds, targetId, currentDropMode);
+    return;
+  }
+
+  // Merge mode (existing behavior)
   // Check if target is locked (currently merging) — queue instead
   if (lockedTaskIds.has(targetId)) {
     sourceIds.forEach((id) => {
@@ -1009,6 +1160,33 @@ activeList.addEventListener('drop', async (e) => {
     await handleMultiMerge(sourceIds, targetId);
   }
 });
+
+function handleReorder(sourceIds, targetId, mode) {
+  pushVersion();
+
+  // Extract items being moved (preserve order)
+  const movedItems = [];
+  for (const id of sourceIds) {
+    const idx = appData.items.findIndex((i) => i.id === id);
+    if (idx !== -1) movedItems.push(appData.items[idx]);
+  }
+  if (movedItems.length === 0) return;
+
+  // Remove moved items from array
+  appData.items = appData.items.filter((i) => !sourceIds.includes(i.id));
+
+  // Find new target index (after removal)
+  let insertIdx = appData.items.findIndex((i) => i.id === targetId);
+  if (insertIdx === -1) insertIdx = appData.items.length;
+  if (mode === 'reorder-below') insertIdx += 1;
+
+  // Insert at new position
+  appData.items.splice(insertIdx, 0, ...movedItems);
+
+  selectedTaskIds.clear();
+  save();
+  renderChecklist();
+}
 
 async function handleMerge(sourceId, targetId) {
   const source = appData.items.find((i) => i.id === sourceId);
