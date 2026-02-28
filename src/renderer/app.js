@@ -241,6 +241,12 @@ async function init() {
   }
 
   applyTheme(appData.settings.theme || 'dark');
+
+  // Cap checklist height so it scrolls instead of growing the window
+  // beyond the screen.  Use 60% of available screen height.
+  const maxCL = Math.round(window.screen.availHeight * 0.6);
+  document.getElementById('checklist-section').style.maxHeight = maxCL + 'px';
+
   renderChecklist(true);
   updateUndoButton();
   updateRedoButton();
@@ -1585,28 +1591,16 @@ function escapeAttr(text) {
 }
 
 // ---- Dynamic Window Sizing ----
-// Temporarily collapse flex layout (body height:auto, checklist flex:none)
-// so every child sits at its natural content height, then read body.offsetHeight.
-// Within a single rAF callback this causes no visible flash (paint hasn't happened).
+// Body is height:100% so flex layout fills the window.  To measure the
+// natural content height (for auto-sizing the window to content), we
+// temporarily switch body to auto height, read offsetHeight (which now
+// reflects pure content since flex-grow has no extra space to fill),
+// then restore the 100% height.
 function adjustWindowHeight() {
-  requestAnimationFrame(() => {
-    const cs = document.getElementById('checklist-section');
-
-    // Collapse flex inflation for measurement
-    const prevBodyH = document.body.style.height;
-    const prevCsFlex = cs.style.flex;
-    document.body.style.height = 'auto';
-    cs.style.flex = '0 1 auto';
-
-    // offsetHeight forces a synchronous reflow with the collapsed styles
-    const total = document.body.offsetHeight;
-
-    // Restore original styles (browser paints restored state)
-    document.body.style.height = prevBodyH;
-    cs.style.flex = prevCsFlex;
-
-    window.api.resizeWindow(total);
-  });
+  document.body.style.height = 'auto';
+  const h = document.body.offsetHeight;
+  document.body.style.height = '';
+  window.api.resizeWindow(h);
 }
 
 // ---- Start ----

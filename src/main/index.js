@@ -216,7 +216,10 @@ ipcMain.on('resize-window', (_event, height) => {
   const win = mb.window;
   if (win) {
     const [width] = win.getSize();
-    const clamped = Math.max(Math.round(height), 120);
+    const { screen } = require('electron');
+    const { height: screenH } = screen.getPrimaryDisplay().workAreaSize;
+    const maxH = Math.round(screenH * 0.85);
+    const clamped = Math.max(Math.min(Math.round(height), maxH), 120);
     win.setSize(width, clamped);
   }
 });

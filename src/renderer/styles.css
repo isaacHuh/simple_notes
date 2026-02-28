@@ -89,12 +89,13 @@ html, body {
   user-select: none;
   -webkit-font-smoothing: antialiased;
   transition: background 0.4s ease, color 0.3s;
+  height: 100%;
 }
 
 body {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  margin: 0;
 }
 
 /* ── Animations ── */
