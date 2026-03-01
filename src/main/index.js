@@ -72,8 +72,10 @@ const mb = menubar({
   browserWindow: {
     width: 400,
     height: 500,
+    minWidth: 300,
+    minHeight: 200,
     frame: false,
-    resizable: false,
+    resizable: true,
     alwaysOnTop: true,
     skipTaskbar: true,
     backgroundColor: '#131318',
@@ -127,11 +129,18 @@ function rebuildContextMenu() {
   ]);
 }
 
+let userHasResized = false;
+
 mb.on('ready', () => {
-  // Hide dock icon on macOS
   if (app.dock) {
     app.dock.hide();
   }
+
+  const win = mb.window;
+  if (win) {
+    win.on('will-resize', () => { userHasResized = true; });
+  }
+  mb.on('after-show', () => { userHasResized = false; });
 
   // Set up right-click handler once, referencing the current menu
   mb.tray.on('right-click', () => {
@@ -210,13 +219,16 @@ ipcMain.on('hide-window', () => {
   mb.hideWindow();
 });
 
-ipcMain.on('resize-window', (_event, height) => {
+ipcMain.on('resize-window', (_event, height, force) => {
   const win = mb.window;
-  if (win) {
-    const [width] = win.getSize();
-    const clamped = Math.min(Math.max(Math.round(height), 120), 800);
-    win.setSize(width, clamped);
-  }
+  if (!win || (!force && userHasResized)) return;
+
+  const [width] = win.getSize();
+  const { screen } = require('electron');
+  const { height: screenH } = screen.getPrimaryDisplay().workAreaSize;
+  const maxH = Math.round(screenH * 0.85);
+  const clamped = Math.max(Math.min(Math.round(height), maxH), 120);
+  win.setSize(width, clamped);
 });
 
 ipcMain.on('open-external', (_event, url) => {

@@ -254,6 +254,12 @@
     <span class="loading-text">Processing with Ollama</span>
   </div>
 
+  <!-- Custom context menu -->
+  <div id="context-menu" class="hidden">
+    <button id="ctx-merge" class="ctx-item hidden">Merge selected</button>
+    <button id="ctx-delete" class="ctx-item ctx-danger">Delete</button>
+  </div>
+
   <!-- Custom confirm dialog -->
   <div id="confirm-dialog" class="hidden">
     <div class="confirm-backdrop"></div>
@@ -265,6 +271,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Resize grip for frameless window -->
+  <div id="resize-grip"></div>
 
   <script src="app.js"></script>
 </body>
