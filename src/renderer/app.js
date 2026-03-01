@@ -215,14 +215,14 @@ document.getElementById('btn-setup-done').addEventListener('click', () => {
   setupWizard.classList.add('hidden');
   appData.settings.setupComplete = true;
   save();
-  adjustWindowHeight();
+  adjustWindowHeight(true);
 });
 
 document.getElementById('btn-setup-skip').addEventListener('click', () => {
   setupWizard.classList.add('hidden');
   appData.settings.setupComplete = true;
   save();
-  adjustWindowHeight();
+  adjustWindowHeight(true);
 });
 
 // ---- Initialization ----
@@ -242,10 +242,8 @@ async function init() {
 
   applyTheme(appData.settings.theme || 'dark');
 
-  // Cap checklist height so it scrolls instead of growing the window
-  // beyond the screen.  Use 60% of available screen height.
-  const maxCL = Math.round(window.screen.availHeight * 0.6);
-  document.getElementById('checklist-section').style.maxHeight = maxCL + 'px';
+  // Window height is clamped to 85% of screen in main process.
+  // No CSS maxHeight cap needed — the flex layout + overflow handles scrolling.
 
   renderChecklist(true);
   updateUndoButton();
@@ -321,7 +319,7 @@ function toggleHistoryPanel() {
     historyPanel.classList.remove('hidden');
     historyBtn.classList.add('active');
     dragHandle.classList.add('history-open');
-    adjustWindowHeight();
+    adjustWindowHeight(true);
   }
 }
 
@@ -329,7 +327,7 @@ function closeHistoryPanel() {
   historyPanel.classList.add('hidden');
   historyBtn.classList.remove('active');
   dragHandle.classList.remove('history-open');
-  adjustWindowHeight();
+  adjustWindowHeight(true);
 }
 
 historyBtn.addEventListener('click', toggleHistoryPanel);
@@ -376,7 +374,7 @@ function toggleModelPanel() {
     updateModelPanel();
     modelPanel.classList.remove('hidden');
     modelBtn.classList.add('active');
-    adjustWindowHeight();
+    adjustWindowHeight(true);
   }
 }
 
@@ -384,7 +382,7 @@ function closeModelPanel() {
   modelPanel.classList.add('hidden');
   modelBtn.classList.remove('active');
   modelPullSection.classList.add('hidden');
-  adjustWindowHeight();
+  adjustWindowHeight(true);
 }
 
 async function selectModelTier(tier) {
@@ -406,12 +404,12 @@ async function selectModelTier(tier) {
       modelPullLabel.textContent = `Downloading ${tierInfo.model}...`;
       modelPullProgressFill.style.width = '0%';
       modelPullProgressText.textContent = 'Starting download...';
-      adjustWindowHeight();
+      adjustWindowHeight(true);
 
       try {
         await window.api.pullModel(tierInfo.model);
         modelPullSection.classList.add('hidden');
-        adjustWindowHeight();
+        adjustWindowHeight(true);
       } catch (err) {
         modelPullLabel.textContent = `Failed to download ${tierInfo.model}`;
         modelPullProgressText.textContent = err.message;
@@ -1591,16 +1589,38 @@ function escapeAttr(text) {
 }
 
 // ---- Dynamic Window Sizing ----
-// Body is height:100% so flex layout fills the window.  To measure the
-// natural content height (for auto-sizing the window to content), we
-// temporarily switch body to auto height, read offsetHeight (which now
-// reflects pure content since flex-grow has no extra space to fill),
-// then restore the 100% height.
-function adjustWindowHeight() {
-  document.body.style.height = 'auto';
-  const h = document.body.offsetHeight;
-  document.body.style.height = '';
-  window.api.resizeWindow(h);
+// Measure desired window height by summing direct body children.
+// The checklist section uses flex-grow so its offsetHeight/scrollHeight
+// reflect the flex-expanded size, not true content.  We measure its
+// visible children instead to get the real content height.
+//
+// force=true: always resize (used for panel toggles like history/model).
+// force=false (default): content-driven resize, skipped if user manually
+// resized the window so we don't override their preference.
+function adjustWindowHeight(force = false) {
+  let h = 0;
+  for (const child of document.body.children) {
+    // Skip hidden elements
+    if (child.style.display === 'none') continue;
+    if (child.classList.contains('hidden')) continue;
+    // Fixed/absolute positioned elements don't contribute to flow height
+    const cs = getComputedStyle(child);
+    if (cs.position === 'fixed' || cs.position === 'absolute') continue;
+
+    if (child.id === 'checklist-section') {
+      // Sum the checklist's inner children to bypass flex-grow inflation
+      for (const inner of child.children) {
+        if (!inner.classList.contains('hidden')) {
+          h += inner.offsetHeight;
+        }
+      }
+      // Include the section's own padding
+      h += parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    } else {
+      h += child.offsetHeight;
+    }
+  }
+  window.api.resizeWindow(h, force);
 }
 
 // ---- Start ----
