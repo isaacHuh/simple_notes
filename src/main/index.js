@@ -129,25 +129,17 @@ function rebuildContextMenu() {
   ]);
 }
 
-// Track user manual resizes.  Once the user drags to resize, we stop
-// overriding their chosen height for content-driven changes (task
-// add/remove/complete).  Panel toggles (history, model) pass force=true
-// and always resize.  The flag resets when the window is re-shown from tray.
 let userHasResized = false;
 
 mb.on('ready', () => {
-  // Hide dock icon on macOS
   if (app.dock) {
     app.dock.hide();
   }
 
   const win = mb.window;
   if (win) {
-    // will-resize fires ONLY for user-initiated drags, not programmatic setSize
     win.on('will-resize', () => { userHasResized = true; });
   }
-
-  // Reset the manual-resize lock when the window is re-shown from tray
   mb.on('after-show', () => { userHasResized = false; });
 
   // Set up right-click handler once, referencing the current menu
@@ -229,10 +221,7 @@ ipcMain.on('hide-window', () => {
 
 ipcMain.on('resize-window', (_event, height, force) => {
   const win = mb.window;
-  if (!win) return;
-
-  // Skip content-driven resizes if user manually resized the window
-  if (!force && userHasResized) return;
+  if (!win || (!force && userHasResized)) return;
 
   const [width] = win.getSize();
   const { screen } = require('electron');

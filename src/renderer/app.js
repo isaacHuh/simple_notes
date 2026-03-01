@@ -242,9 +242,6 @@ async function init() {
 
   applyTheme(appData.settings.theme || 'dark');
 
-  // Window height is clamped to 85% of screen in main process.
-  // No CSS maxHeight cap needed — the flex layout + overflow handles scrolling.
-
   renderChecklist(true);
   updateUndoButton();
   updateRedoButton();
@@ -1589,32 +1586,21 @@ function escapeAttr(text) {
 }
 
 // ---- Dynamic Window Sizing ----
-// Measure desired window height by summing direct body children.
-// The checklist section uses flex-grow so its offsetHeight/scrollHeight
-// reflect the flex-expanded size, not true content.  We measure its
-// visible children instead to get the real content height.
-//
-// force=true: always resize (used for panel toggles like history/model).
-// force=false (default): content-driven resize, skipped if user manually
-// resized the window so we don't override their preference.
+// Measure desired window height by summing visible body children.
+// force=true bypasses user-resize lock (used for panel toggles).
 function adjustWindowHeight(force = false) {
   let h = 0;
   for (const child of document.body.children) {
-    // Skip hidden elements
     if (child.style.display === 'none') continue;
     if (child.classList.contains('hidden')) continue;
-    // Fixed/absolute positioned elements don't contribute to flow height
     const cs = getComputedStyle(child);
     if (cs.position === 'fixed' || cs.position === 'absolute') continue;
 
     if (child.id === 'checklist-section') {
-      // Sum the checklist's inner children to bypass flex-grow inflation
+      // Sum inner children to bypass flex-grow inflation
       for (const inner of child.children) {
-        if (!inner.classList.contains('hidden')) {
-          h += inner.offsetHeight;
-        }
+        if (!inner.classList.contains('hidden')) h += inner.offsetHeight;
       }
-      // Include the section's own padding
       h += parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
     } else {
       h += child.offsetHeight;
