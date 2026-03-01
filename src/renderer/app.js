@@ -272,6 +272,17 @@ themeToggle.addEventListener('click', () => {
 });
 
 // ---- Color Scheme ----
+const SCHEME_BUTTON_COLORS = {
+  purple: '#6c63ff',
+  green:  '#4A7C2F',
+  orange: '#E8622A',
+  pink:   '#eb60c1',
+  brown:  '#854e1c',
+  chalk:  '#c8c0b0',
+};
+
+const colorBtnFill = document.getElementById('color-btn-fill');
+
 function applyColorScheme(scheme) {
   if (!scheme || scheme === 'purple') {
     document.documentElement.removeAttribute('data-color-scheme');
@@ -282,6 +293,8 @@ function applyColorScheme(scheme) {
   colorPanel.querySelectorAll('.color-swatch').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.scheme === (scheme || 'purple'));
   });
+  // Update button fill color
+  colorBtnFill.setAttribute('fill', SCHEME_BUTTON_COLORS[scheme] || SCHEME_BUTTON_COLORS.purple);
 }
 
 function toggleColorPanel() {
