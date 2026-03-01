@@ -60,6 +60,14 @@
           <path d="M11 8.5A5 5 0 1 1 4.5 2a3.5 3.5 0 0 0 6.5 6.5z"/>
         </svg>
       </button>
+      <button id="color-btn" class="icon-btn" title="Color scheme">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <circle cx="4.5" cy="4.5" r="2.5" fill="#6c63ff"/>
+          <circle cx="9.5" cy="4.5" r="2.5" fill="#4A7C2F"/>
+          <circle cx="4.5" cy="9.5" r="2.5" fill="#E8622A"/>
+          <circle cx="9.5" cy="9.5" r="2.5" fill="#eb60c1"/>
+        </svg>
+      </button>
       <button id="model-btn" class="icon-btn" title="Model settings">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
              stroke="currentColor" stroke-width="1.5"
@@ -133,6 +141,36 @@
       </div>
       <div class="progress-bar"><div class="progress-fill" id="model-pull-progress-fill"></div></div>
       <span class="progress-text" id="model-pull-progress-text"></span>
+    </div>
+  </div>
+
+  <!-- Color scheme panel (inline, below title bar) -->
+  <div id="color-panel" class="hidden">
+    <div class="color-panel-header">
+      <span>COLOR</span>
+      <button id="color-panel-close">&times;</button>
+    </div>
+    <div class="color-swatches">
+      <button class="color-swatch active" data-scheme="purple" title="Purple">
+        <span class="swatch-ring"><span class="swatch-fill" style="--swatch-color: #6c63ff"></span></span>
+        <span class="swatch-label">Purple</span>
+      </button>
+      <button class="color-swatch" data-scheme="green" title="Green">
+        <span class="swatch-ring"><span class="swatch-fill" style="--swatch-color: #4A7C2F"></span></span>
+        <span class="swatch-label">Green</span>
+      </button>
+      <button class="color-swatch" data-scheme="orange" title="Orange">
+        <span class="swatch-ring"><span class="swatch-fill" style="--swatch-color: #E8622A"></span></span>
+        <span class="swatch-label">Orange</span>
+      </button>
+      <button class="color-swatch" data-scheme="pink" title="Pink">
+        <span class="swatch-ring"><span class="swatch-fill" style="--swatch-color: #eb60c1"></span></span>
+        <span class="swatch-label">Pink</span>
+      </button>
+      <button class="color-swatch" data-scheme="brown" title="Brown">
+        <span class="swatch-ring"><span class="swatch-fill" style="--swatch-color: #854e1c"></span></span>
+        <span class="swatch-label">Brown</span>
+      </button>
     </div>
   </div>
 

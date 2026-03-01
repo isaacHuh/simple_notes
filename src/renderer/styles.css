@@ -78,6 +78,148 @@
   --scrollbar-thumb: #ddd9f8;
 }
 
+/* ── Color Schemes ── */
+
+/* Green */
+[data-theme="dark"][data-color-scheme="green"] {
+  --accent:          #4A7C2F;
+  --accent-glow:     rgba(74, 124, 47, 0.25);
+  --accent-soft:     rgba(74, 124, 47, 0.1);
+  --border-accent:   #4A7C2F;
+  --check:           #6da34d;
+  --check-bg:        rgba(109, 163, 77, 0.12);
+  --badge-bg:        #162210;
+  --badge-text:      #5a9a38;
+  --hist-badge-bg:   #162210;
+  --hist-badge-text: #5a9a38;
+  --shadow:          0 8px 60px rgba(0,0,0,0.8), 0 0 120px rgba(74, 124, 47, 0.06);
+}
+[data-theme="light"][data-color-scheme="green"] {
+  --outer-bg:        #eff5ed;
+  --surface-hover:   #f2f7f0;
+  --border:          #cddfc7;
+  --border-accent:   #4A7C2F;
+  --input-bg:        #f4f9f2;
+  --accent:          #3f6d28;
+  --accent-glow:     rgba(63, 109, 40, 0.2);
+  --accent-soft:     rgba(63, 109, 40, 0.08);
+  --check:           #3f6d28;
+  --check-bg:        rgba(63, 109, 40, 0.1);
+  --badge-bg:        #e5f0e1;
+  --badge-text:      #3f6d28;
+  --hist-bg:         #f2f7f0;
+  --hist-badge-bg:   #e5f0e1;
+  --hist-badge-text: #3f6d28;
+  --completed-text:  #b0c8a8;
+  --shadow:          0 8px 40px rgba(74, 124, 47, 0.12), 0 2px 8px rgba(74, 124, 47, 0.06);
+  --scrollbar-thumb: #cddfc7;
+}
+
+/* Orange */
+[data-theme="dark"][data-color-scheme="orange"] {
+  --accent:          #E8622A;
+  --accent-glow:     rgba(232, 98, 42, 0.25);
+  --accent-soft:     rgba(232, 98, 42, 0.1);
+  --border-accent:   #E8622A;
+  --check:           #f09060;
+  --check-bg:        rgba(240, 144, 96, 0.12);
+  --badge-bg:        #2a1810;
+  --badge-text:      #f07840;
+  --hist-badge-bg:   #2a1810;
+  --hist-badge-text: #f07840;
+  --shadow:          0 8px 60px rgba(0,0,0,0.8), 0 0 120px rgba(232, 98, 42, 0.06);
+}
+[data-theme="light"][data-color-scheme="orange"] {
+  --outer-bg:        #fef2ed;
+  --surface-hover:   #fef6f2;
+  --border:          #f0d4c5;
+  --border-accent:   #E8622A;
+  --input-bg:        #fef8f5;
+  --accent:          #d05520;
+  --accent-glow:     rgba(208, 85, 32, 0.2);
+  --accent-soft:     rgba(208, 85, 32, 0.08);
+  --check:           #d05520;
+  --check-bg:        rgba(208, 85, 32, 0.1);
+  --badge-bg:        #fce8de;
+  --badge-text:      #d05520;
+  --hist-bg:         #fef6f2;
+  --hist-badge-bg:   #fce8de;
+  --hist-badge-text: #d05520;
+  --completed-text:  #d4bab0;
+  --shadow:          0 8px 40px rgba(232, 98, 42, 0.12), 0 2px 8px rgba(232, 98, 42, 0.06);
+  --scrollbar-thumb: #f0d4c5;
+}
+
+/* Pink */
+[data-theme="dark"][data-color-scheme="pink"] {
+  --accent:          #eb60c1;
+  --accent-glow:     rgba(235, 96, 193, 0.25);
+  --accent-soft:     rgba(235, 96, 193, 0.1);
+  --border-accent:   #eb60c1;
+  --check:           #f290d6;
+  --check-bg:        rgba(242, 144, 214, 0.12);
+  --badge-bg:        #2a1024;
+  --badge-text:      #f080cc;
+  --hist-badge-bg:   #2a1024;
+  --hist-badge-text: #f080cc;
+  --shadow:          0 8px 60px rgba(0,0,0,0.8), 0 0 120px rgba(235, 96, 193, 0.06);
+}
+[data-theme="light"][data-color-scheme="pink"] {
+  --outer-bg:        #fef0f9;
+  --surface-hover:   #fef4fb;
+  --border:          #f0cee5;
+  --border-accent:   #eb60c1;
+  --input-bg:        #fef7fc;
+  --accent:          #d44aab;
+  --accent-glow:     rgba(212, 74, 171, 0.2);
+  --accent-soft:     rgba(212, 74, 171, 0.08);
+  --check:           #d44aab;
+  --check-bg:        rgba(212, 74, 171, 0.1);
+  --badge-bg:        #fce3f4;
+  --badge-text:      #d44aab;
+  --hist-bg:         #fef4fb;
+  --hist-badge-bg:   #fce3f4;
+  --hist-badge-text: #d44aab;
+  --completed-text:  #d4b0c8;
+  --shadow:          0 8px 40px rgba(235, 96, 193, 0.12), 0 2px 8px rgba(235, 96, 193, 0.06);
+  --scrollbar-thumb: #f0cee5;
+}
+
+/* Brown */
+[data-theme="dark"][data-color-scheme="brown"] {
+  --accent:          #854e1c;
+  --accent-glow:     rgba(133, 78, 28, 0.25);
+  --accent-soft:     rgba(133, 78, 28, 0.1);
+  --border-accent:   #854e1c;
+  --check:           #b07a3f;
+  --check-bg:        rgba(176, 122, 63, 0.12);
+  --badge-bg:        #221808;
+  --badge-text:      #a06830;
+  --hist-badge-bg:   #221808;
+  --hist-badge-text: #a06830;
+  --shadow:          0 8px 60px rgba(0,0,0,0.8), 0 0 120px rgba(133, 78, 28, 0.06);
+}
+[data-theme="light"][data-color-scheme="brown"] {
+  --outer-bg:        #f7f0e8;
+  --surface-hover:   #f9f4ed;
+  --border:          #e0cdb8;
+  --border-accent:   #854e1c;
+  --input-bg:        #faf7f2;
+  --accent:          #704218;
+  --accent-glow:     rgba(112, 66, 24, 0.2);
+  --accent-soft:     rgba(112, 66, 24, 0.08);
+  --check:           #704218;
+  --check-bg:        rgba(112, 66, 24, 0.1);
+  --badge-bg:        #f0e4d4;
+  --badge-text:      #704218;
+  --hist-bg:         #f9f4ed;
+  --hist-badge-bg:   #f0e4d4;
+  --hist-badge-text: #704218;
+  --completed-text:  #c8b8a2;
+  --shadow:          0 8px 40px rgba(133, 78, 28, 0.12), 0 2px 8px rgba(133, 78, 28, 0.06);
+  --scrollbar-thumb: #e0cdb8;
+}
+
 /* ── Base ── */
 html, body {
   font-family: var(--font-body);
@@ -1680,6 +1822,101 @@ li.drop-below::after {
   font-size: 11px;
   color: var(--accent);
   font-weight: 500;
+}
+
+/* ── Color Scheme Panel ── */
+#color-panel {
+  border-bottom: 1px solid var(--border);
+  background: var(--hist-bg);
+  flex-shrink: 0;
+  animation: hist-slide-in 0.2s ease;
+  transition: background 0.4s ease;
+}
+
+.color-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px 8px;
+}
+
+.color-panel-header span {
+  font-family: var(--font-body);
+  font-size: 9.5px;
+  color: var(--text-muted);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+.color-panel-header button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1;
+  opacity: 0.6;
+  padding: 0 2px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.color-panel-header button:hover {
+  opacity: 1;
+}
+
+.color-swatches {
+  display: flex;
+  gap: 8px;
+  padding: 0 14px 12px;
+}
+
+.color-swatch {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.swatch-ring {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  padding: 3px;
+  transition: border-color 0.15s;
+}
+
+.color-swatch:hover .swatch-ring {
+  border-color: var(--border);
+}
+
+.color-swatch.active .swatch-ring {
+  border-color: var(--text);
+}
+
+.swatch-fill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--swatch-color);
+}
+
+.swatch-label {
+  font-family: var(--font-body);
+  font-size: 9px;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+  transition: color 0.15s;
+}
+
+.color-swatch.active .swatch-label {
+  color: var(--text);
 }
 
 /* ── Resize Grip ── */

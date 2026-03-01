@@ -60,6 +60,9 @@ const modelPullProgressText = document.getElementById('model-pull-progress-text'
 const contextMenu = document.getElementById('context-menu');
 const ctxMerge = document.getElementById('ctx-merge');
 const ctxDelete = document.getElementById('ctx-delete');
+const colorBtn = document.getElementById('color-btn');
+const colorPanel = document.getElementById('color-panel');
+const colorPanelClose = document.getElementById('color-panel-close');
 
 // ---- SVG Icons ----
 const ICON_PLUS = `<svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -241,6 +244,7 @@ async function init() {
   }
 
   applyTheme(appData.settings.theme || 'dark');
+  applyColorScheme(appData.settings.colorScheme || 'purple');
 
   renderChecklist(true);
   updateUndoButton();
@@ -264,6 +268,50 @@ themeToggle.addEventListener('click', () => {
   const next = current === 'dark' ? 'light' : 'dark';
   applyTheme(next);
   appData.settings.theme = next;
+  save();
+});
+
+// ---- Color Scheme ----
+function applyColorScheme(scheme) {
+  if (!scheme || scheme === 'purple') {
+    document.documentElement.removeAttribute('data-color-scheme');
+  } else {
+    document.documentElement.setAttribute('data-color-scheme', scheme);
+  }
+  // Update swatch active state
+  colorPanel.querySelectorAll('.color-swatch').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.scheme === (scheme || 'purple'));
+  });
+}
+
+function toggleColorPanel() {
+  const isOpen = !colorPanel.classList.contains('hidden');
+  if (isOpen) {
+    closeColorPanel();
+  } else {
+    closeHistoryPanel();
+    closeModelPanel();
+    colorPanel.classList.remove('hidden');
+    colorBtn.classList.add('active');
+    adjustWindowHeight(true);
+  }
+}
+
+function closeColorPanel() {
+  colorPanel.classList.add('hidden');
+  colorBtn.classList.remove('active');
+  adjustWindowHeight(true);
+}
+
+colorBtn.addEventListener('click', toggleColorPanel);
+colorPanelClose.addEventListener('click', closeColorPanel);
+
+colorPanel.addEventListener('click', (e) => {
+  const swatch = e.target.closest('.color-swatch');
+  if (!swatch) return;
+  const scheme = swatch.dataset.scheme;
+  applyColorScheme(scheme);
+  appData.settings.colorScheme = scheme;
   save();
 });
 
@@ -312,6 +360,7 @@ function toggleHistoryPanel() {
     closeHistoryPanel();
   } else {
     closeModelPanel();
+    closeColorPanel();
     renderHistory();
     historyPanel.classList.remove('hidden');
     historyBtn.classList.add('active');
@@ -368,6 +417,7 @@ function toggleModelPanel() {
     closeModelPanel();
   } else {
     closeHistoryPanel();
+    closeColorPanel();
     updateModelPanel();
     modelPanel.classList.remove('hidden');
     modelBtn.classList.add('active');
