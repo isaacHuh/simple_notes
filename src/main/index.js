@@ -1,4 +1,4 @@
-const { app, ipcMain, Menu, shell } = require('electron');
+const { app, ipcMain, Menu, shell, BrowserWindow } = require('electron');
 const os = require('os');
 const { menubar } = require('menubar');
 const path = require('path');
@@ -88,6 +88,7 @@ const mb = menubar({
 });
 
 let currentContextMenu = null;
+let settingsWindow = null;
 
 function rebuildContextMenu() {
   if (!mb.tray) return;
@@ -235,6 +236,72 @@ ipcMain.on('open-external', (_event, url) => {
   shell.openExternal(url);
 });
 
+// ── Settings Window ──
+
+ipcMain.on('open-settings', () => {
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    settingsWindow.focus();
+    return;
+  }
+
+  const mainWin = mb.window;
+  const mainBounds = mainWin ? mainWin.getBounds() : { x: 300, y: 100 };
+
+  settingsWindow = new BrowserWindow({
+    width: 380,
+    height: 420,
+    frame: false,
+    resizable: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    backgroundColor: '#131318',
+    x: mainBounds.x - 390,
+    y: mainBounds.y,
+    webPreferences: {
+      preload: path.join(__dirname, '../preload/settings-preload.js'),
+      contextIsolation: true,
+      nodeIntegration: false,
+    },
+  });
+
+  settingsWindow.loadFile(path.join(__dirname, '../renderer/settings.html'));
+
+  settingsWindow.on('closed', () => {
+    settingsWindow = null;
+  });
+});
+
+ipcMain.on('close-settings', () => {
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    settingsWindow.close();
+  }
+});
+
+ipcMain.handle('get-settings', () => {
+  const data = store.loadData();
+  return data.settings || {};
+});
+
+ipcMain.handle('update-setting', (_event, key, value) => {
+  const data = store.loadData();
+  data.settings[key] = value;
+  store.saveData(data);
+
+  // Notify the main renderer window
+  const mainWin = mb.window;
+  if (mainWin && !mainWin.isDestroyed()) {
+    mainWin.webContents.send('settings-changed', { key, value });
+  }
+
+  // Notify the settings window too (for cross-sync)
+  if (settingsWindow && !settingsWindow.isDestroyed() &&
+      _event.sender !== settingsWindow.webContents) {
+    settingsWindow.webContents.send('settings-changed', { key, value });
+  }
+
+  return true;
+});
+
 ipcMain.handle('pull-model', async (_event, model) => {
   const data = store.loadData();
   const baseUrl = data.settings.ollamaUrl || 'http://localhost:11434';
@@ -268,6 +335,9 @@ ipcMain.handle('pull-model', async (_event, model) => {
         const json = JSON.parse(line);
         if (win && !win.isDestroyed()) {
           win.webContents.send('pull-progress', json);
+        }
+        if (settingsWindow && !settingsWindow.isDestroyed()) {
+          settingsWindow.webContents.send('pull-progress', json);
         }
       } catch {
         // skip malformed lines
