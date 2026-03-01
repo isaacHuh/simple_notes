@@ -23,4 +23,9 @@ contextBridge.exposeInMainWorld('api', {
   checkForUpdates: () => ipcRenderer.invoke('check-for-updates'),
   getUpdateStatus: () => ipcRenderer.invoke('get-update-status'),
   getAppVersion: () => ipcRenderer.invoke('get-app-version'),
+
+  openSettings: () => ipcRenderer.send('open-settings'),
+  onSettingsChanged: (callback) => {
+    ipcRenderer.on('settings-changed', (_event, data) => callback(data));
+  },
 });

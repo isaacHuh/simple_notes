@@ -35,7 +35,6 @@ const errorBanner = document.getElementById('error-banner');
 const errorMessage = document.getElementById('error-message');
 const errorDismiss = document.getElementById('error-dismiss');
 const loadingOverlay = document.getElementById('loading-overlay');
-const themeToggle = document.getElementById('theme-toggle');
 const undoBtn = document.getElementById('undo-btn');
 const queueIndicator = document.getElementById('queue-indicator');
 const confirmDialog = document.getElementById('confirm-dialog');
@@ -50,13 +49,7 @@ const historyClose = document.getElementById('history-close');
 const dragHandle = document.getElementById('drag-handle');
 const clearCompletedBtn = document.getElementById('clear-completed');
 const redoBtn = document.getElementById('redo-btn');
-const modelBtn = document.getElementById('model-btn');
-const modelPanel = document.getElementById('model-panel');
-const modelPanelClose = document.getElementById('model-panel-close');
-const modelPullSection = document.getElementById('model-pull-section');
-const modelPullLabel = document.getElementById('model-pull-label');
-const modelPullProgressFill = document.getElementById('model-pull-progress-fill');
-const modelPullProgressText = document.getElementById('model-pull-progress-text');
+const settingsBtn = document.getElementById('settings-btn');
 const contextMenu = document.getElementById('context-menu');
 const ctxMerge = document.getElementById('ctx-merge');
 const ctxDelete = document.getElementById('ctx-delete');
@@ -209,8 +202,6 @@ document.getElementById('btn-pull-model').addEventListener('click', async () => 
   }
 });
 
-// Pull progress is handled by the consolidated handler in the Model Selection Panel section above.
-
 document.getElementById('btn-setup-done').addEventListener('click', () => {
   setupWizard.classList.add('hidden');
   appData.settings.setupComplete = true;
@@ -241,6 +232,7 @@ async function init() {
   }
 
   applyTheme(appData.settings.theme || 'dark');
+  applyColorScheme(appData.settings.colorScheme || 'purple');
 
   renderChecklist(true);
   updateUndoButton();
@@ -259,12 +251,28 @@ function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
 }
 
-themeToggle.addEventListener('click', () => {
-  const current = document.documentElement.getAttribute('data-theme') || 'dark';
-  const next = current === 'dark' ? 'light' : 'dark';
-  applyTheme(next);
-  appData.settings.theme = next;
-  save();
+// ---- Color Scheme ----
+function applyColorScheme(scheme) {
+  if (!scheme || scheme === 'purple') {
+    document.documentElement.removeAttribute('data-color-scheme');
+  } else {
+    document.documentElement.setAttribute('data-color-scheme', scheme);
+  }
+}
+
+// ---- Settings Button ----
+settingsBtn.addEventListener('click', () => {
+  window.api.openSettings();
+});
+
+document.getElementById('close-btn').addEventListener('click', () => {
+  window.api.hideWindow();
+});
+
+window.api.onSettingsChanged(({ key, value }) => {
+  appData.settings[key] = value;
+  if (key === 'theme') applyTheme(value);
+  if (key === 'colorScheme') applyColorScheme(value);
 });
 
 // ---- Input History ----
@@ -311,7 +319,6 @@ function toggleHistoryPanel() {
   if (isOpen) {
     closeHistoryPanel();
   } else {
-    closeModelPanel();
     renderHistory();
     historyPanel.classList.remove('hidden');
     historyBtn.classList.add('active');
@@ -343,92 +350,8 @@ historyList.addEventListener('click', (e) => {
   }
 });
 
-// ---- Model Selection Panel ----
-function getTierForModel(modelName) {
-  for (const [tier, info] of Object.entries(MODEL_TIERS)) {
-    if (info.model === modelName) return tier;
-  }
-  return null;
-}
-
-function updateModelPanel() {
-  const currentModel = appData.settings.ollamaModel || 'exaone3.5:2.4b';
-  const currentTier = getTierForModel(currentModel);
-  const radios = modelPanel.querySelectorAll('input[name="model-tier"]');
-  radios.forEach((radio) => {
-    radio.checked = radio.value === currentTier;
-    const label = radio.closest('.model-option');
-    label.classList.toggle('active', radio.value === currentTier);
-  });
-}
-
-function toggleModelPanel() {
-  const isOpen = !modelPanel.classList.contains('hidden');
-  if (isOpen) {
-    closeModelPanel();
-  } else {
-    closeHistoryPanel();
-    updateModelPanel();
-    modelPanel.classList.remove('hidden');
-    modelBtn.classList.add('active');
-    adjustWindowHeight(true);
-  }
-}
-
-function closeModelPanel() {
-  modelPanel.classList.add('hidden');
-  modelBtn.classList.remove('active');
-  modelPullSection.classList.add('hidden');
-  adjustWindowHeight(true);
-}
-
-async function selectModelTier(tier) {
-  const tierInfo = MODEL_TIERS[tier];
-  if (!tierInfo) return;
-
-  appData.settings.ollamaModel = tierInfo.model;
-  appData.settings.modelTier = tier;
-  await save();
-  updateModelPanel();
-
-  // Check if the model is already available
-  try {
-    const models = await window.api.listModels();
-    const hasModel = models.some((m) => m === tierInfo.model);
-    if (!hasModel) {
-      // Need to pull the model
-      modelPullSection.classList.remove('hidden');
-      modelPullLabel.textContent = `Downloading ${tierInfo.model}...`;
-      modelPullProgressFill.style.width = '0%';
-      modelPullProgressText.textContent = 'Starting download...';
-      adjustWindowHeight(true);
-
-      try {
-        await window.api.pullModel(tierInfo.model);
-        modelPullSection.classList.add('hidden');
-        adjustWindowHeight(true);
-      } catch (err) {
-        modelPullLabel.textContent = `Failed to download ${tierInfo.model}`;
-        modelPullProgressText.textContent = err.message;
-      }
-    }
-  } catch {
-    // Ollama not running, that's ok — model will be pulled later
-  }
-}
-
-modelBtn.addEventListener('click', toggleModelPanel);
-modelPanelClose.addEventListener('click', closeModelPanel);
-
-modelPanel.addEventListener('change', (e) => {
-  if (e.target.name === 'model-tier') {
-    selectModelTier(e.target.value);
-  }
-});
-
-// Reuse pull-progress handler for model panel downloads
+// Pull progress for setup wizard
 window.api.onPullProgress((data) => {
-  // Update setup wizard progress if visible
   if (!stepModelProgress.classList.contains('hidden')) {
     if (data.total && data.completed) {
       const pct = Math.round((data.completed / data.total) * 100);
@@ -437,18 +360,6 @@ window.api.onPullProgress((data) => {
       pullProgressText.textContent = `${data.status || 'Downloading'}... ${mb(data.completed)} / ${mb(data.total)} MB (${pct}%)`;
     } else if (data.status) {
       pullProgressText.textContent = data.status;
-    }
-  }
-
-  // Update model panel progress if visible
-  if (!modelPullSection.classList.contains('hidden')) {
-    if (data.total && data.completed) {
-      const pct = Math.round((data.completed / data.total) * 100);
-      modelPullProgressFill.style.width = `${pct}%`;
-      const mb = (n) => (n / 1024 / 1024).toFixed(0);
-      modelPullProgressText.textContent = `${data.status || 'Downloading'}... ${mb(data.completed)} / ${mb(data.total)} MB (${pct}%)`;
-    } else if (data.status) {
-      modelPullProgressText.textContent = data.status;
     }
   }
 });

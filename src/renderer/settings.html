@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; connect-src http://localhost:*;">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="settings.css">
+  <title>Settings</title>
+</head>
+<body>
+  <div class="settings-titlebar">
+    <button id="close-btn" class="window-close" title="Close"></button>
+    <span class="settings-title">Settings</span>
+  </div>
+  <div class="settings-body">
+    <!-- Appearance -->
+    <section class="settings-group">
+      <div class="group-label">Appearance</div>
+
+      <div class="setting-row">
+        <span class="setting-name">Theme</span>
+        <div class="segmented-control" id="theme-control">
+          <button class="seg-btn" data-theme="dark">Dark</button>
+          <button class="seg-btn" data-theme="light">Light</button>
+          <div class="seg-indicator"></div>
+        </div>
+      </div>
+
+      <div class="setting-row color-row">
+        <span class="setting-name">Accent</span>
+        <div class="color-pickers">
+          <button class="color-dot" data-scheme="purple" title="Purple"><span style="--dot:#6c63ff"></span></button>
+          <button class="color-dot" data-scheme="green" title="Green"><span style="--dot:#4A7C2F"></span></button>
+          <button class="color-dot" data-scheme="orange" title="Orange"><span style="--dot:#E8622A"></span></button>
+          <button class="color-dot" data-scheme="pink" title="Pink"><span style="--dot:#eb60c1"></span></button>
+          <button class="color-dot" data-scheme="brown" title="Brown"><span style="--dot:#854e1c"></span></button>
+          <button class="color-dot" data-scheme="chalk" title="Chalk"><span style="--dot:#c8c0b0"></span></button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Model -->
+    <section class="settings-group">
+      <div class="group-label">Model</div>
+      <div class="model-cards">
+        <button class="model-card" data-tier="low">
+          <div class="model-card-head">
+            <span class="model-tier">Low</span>
+            <span class="model-size">~1.6 GB</span>
+          </div>
+          <span class="model-name">exaone3.5:2.4b</span>
+          <span class="model-desc">Fast, best format adherence</span>
+        </button>
+        <button class="model-card" data-tier="medium">
+          <div class="model-card-head">
+            <span class="model-tier">Medium</span>
+            <span class="model-size">~3.3 GB</span>
+          </div>
+          <span class="model-name">gemma3:4b</span>
+          <span class="model-desc">Best instruction following</span>
+        </button>
+        <button class="model-card" data-tier="high">
+          <div class="model-card-head">
+            <span class="model-tier">High</span>
+            <span class="model-size">~5 GB</span>
+          </div>
+          <span class="model-name">qwen3:8b</span>
+          <span class="model-desc">Best quality, slower</span>
+        </button>
+      </div>
+      <div id="model-pull-section" class="hidden">
+        <div class="pull-row">
+          <span id="model-pull-label">Downloading...</span>
+          <span class="progress-text" id="model-pull-progress-text"></span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="model-pull-progress-fill"></div></div>
+      </div>
+    </section>
+  </div>
+
+  <script src="settings.js"></script>
+</body>
+</html>

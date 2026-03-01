@@ -14,12 +14,7 @@
   <!-- Title bar -->
   <div id="drag-handle">
     <div class="titlebar-left">
-      <div class="drag-dots">
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-        <div class="dot"></div>
-      </div>
+      <button id="close-btn" class="window-close" title="Close"></button>
       <span class="title">Sticky</span>
     </div>
     <div class="titlebar-right">
@@ -47,27 +42,12 @@
           <path d="M7 4V7l2 1.5"/>
         </svg>
       </button>
-      <button id="theme-toggle" class="icon-btn" title="Toggle theme">
-        <svg class="icon-sun" width="14" height="14" viewBox="0 0 14 14" fill="none"
-             stroke="currentColor" stroke-width="1.6"
-             stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="7" cy="7" r="2.5"/>
-          <path d="M7 1v1.5M7 11.5V13M1 7h1.5M11.5 7H13M2.93 2.93l1.06 1.06M10.01 10.01l1.06 1.06M10.01 3.99l1.06-1.06M2.93 11.07l1.06-1.06"/>
-        </svg>
-        <svg class="icon-moon" width="13" height="13" viewBox="0 0 13 13" fill="none"
-             stroke="currentColor" stroke-width="1.6"
-             stroke-linecap="round" stroke-linejoin="round">
-          <path d="M11 8.5A5 5 0 1 1 4.5 2a3.5 3.5 0 0 0 6.5 6.5z"/>
-        </svg>
-      </button>
-      <button id="model-btn" class="icon-btn" title="Model settings">
+      <button id="settings-btn" class="icon-btn" title="Settings">
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"
-             stroke="currentColor" stroke-width="1.5"
+             stroke="currentColor" stroke-width="1.4"
              stroke-linecap="round" stroke-linejoin="round">
-          <path d="M2 4h3M9 4h3"/>
-          <circle cx="7" cy="4" r="2" fill="none"/>
-          <path d="M2 10h3M9 10h3"/>
-          <circle cx="7" cy="10" r="2" fill="none"/>
+          <path d="M5.7 1.5h2.6l.4 1.6a4.5 4.5 0 0 1 1.1.6l1.6-.5 1.3 2.3-1.2 1.1a4.6 4.6 0 0 1 0 1.3l1.2 1.1-1.3 2.3-1.6-.5a4.5 4.5 0 0 1-1.1.6l-.4 1.6H5.7l-.4-1.6a4.5 4.5 0 0 1-1.1-.6l-1.6.5-1.3-2.3 1.2-1.1a4.6 4.6 0 0 1 0-1.3L1.3 5.5l1.3-2.3 1.6.5a4.5 4.5 0 0 1 1.1-.6l.4-1.6z"/>
+          <circle cx="7" cy="7" r="2"/>
         </svg>
       </button>
       <div id="status-indicator" class="status-dot offline" title="Ollama: checking..."></div>
@@ -83,56 +63,6 @@
     <div class="history-scroll">
       <ul id="history-list"></ul>
       <div id="history-empty" class="hidden">no history yet</div>
-    </div>
-  </div>
-
-  <!-- Model selection panel (inline, below title bar) -->
-  <div id="model-panel" class="hidden">
-    <div class="model-panel-header">
-      <span>MODEL</span>
-      <button id="model-panel-close">&times;</button>
-    </div>
-    <div class="model-options">
-      <label class="model-option" data-tier="low">
-        <input type="radio" name="model-tier" value="low">
-        <div class="model-option-content">
-          <div class="model-option-top">
-            <span class="model-option-label">Low</span>
-            <span class="model-option-size">~1.6 GB</span>
-          </div>
-          <span class="model-option-name">exaone3.5:2.4b</span>
-          <span class="model-option-desc">Fast and light, best format adherence at this size</span>
-        </div>
-      </label>
-      <label class="model-option" data-tier="medium">
-        <input type="radio" name="model-tier" value="medium">
-        <div class="model-option-content">
-          <div class="model-option-top">
-            <span class="model-option-label">Medium</span>
-            <span class="model-option-size">~3.3 GB</span>
-          </div>
-          <span class="model-option-name">gemma3:4b</span>
-          <span class="model-option-desc">Best instruction following at this size</span>
-        </div>
-      </label>
-      <label class="model-option" data-tier="high">
-        <input type="radio" name="model-tier" value="high">
-        <div class="model-option-content">
-          <div class="model-option-top">
-            <span class="model-option-label">High</span>
-            <span class="model-option-size">~5 GB</span>
-          </div>
-          <span class="model-option-name">qwen3:8b</span>
-          <span class="model-option-desc">Best quality, slower on low-end hardware</span>
-        </div>
-      </label>
-    </div>
-    <div id="model-pull-section" class="hidden">
-      <div class="model-pull-status">
-        <span id="model-pull-label">Downloading model...</span>
-      </div>
-      <div class="progress-bar"><div class="progress-fill" id="model-pull-progress-fill"></div></div>
-      <span class="progress-text" id="model-pull-progress-text"></span>
     </div>
   </div>
 
@@ -271,9 +201,6 @@
       </div>
     </div>
   </div>
-
-  <!-- Resize grip for frameless window -->
-  <div id="resize-grip"></div>
 
   <script src="app.js"></script>
 </body>
