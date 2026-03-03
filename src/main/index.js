@@ -78,6 +78,7 @@ const mb = menubar({
     resizable: true,
     alwaysOnTop: true,
     skipTaskbar: true,
+    icon: path.join(assetsPath, 'icon.png'),
     backgroundColor: '#131318',
     webPreferences: {
       preload: path.join(__dirname, '../preload/preload.js'),
