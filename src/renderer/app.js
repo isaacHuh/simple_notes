@@ -1,8 +1,8 @@
 // ---- Model Tiers ----
 const MODEL_TIERS = {
-  low:    { model: 'exaone3.5:2.4b', label: 'Low', desc: 'Fast and light, best format adherence at this size', size: '~1.6 GB' },
-  medium: { model: 'gemma3:4b',  label: 'Medium', desc: 'Best instruction following at this size', size: '~3.3 GB' },
-  high:   { model: 'qwen3:8b',  label: 'High',   desc: 'Best quality, slower on low-end hardware', size: '~5 GB' },
+  low:    { model: 'qwen3.5:2b', label: 'Low', desc: 'Fast and light, great for edge devices', size: '~1.5 GB' },
+  medium: { model: 'qwen3.5:4b',  label: 'Medium', desc: 'Balanced performance with multimodal support', size: '~2.7 GB' },
+  high:   { model: 'qwen3.5:9b',  label: 'High',   desc: 'Best reasoning quality, slower on low-end hardware', size: '~5.5 GB' },
 };
 
 // ---- State ----

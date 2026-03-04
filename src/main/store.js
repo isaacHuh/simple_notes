@@ -7,7 +7,7 @@ const dataPath = path.join(app.getPath('userData'), 'data.json');
 const defaultData = {
   items: [],
   settings: {
-    ollamaModel: 'exaone3.5:2.4b',
+    ollamaModel: 'qwen3.5:2b',
     ollamaUrl: 'http://localhost:11434',
   },
 };
