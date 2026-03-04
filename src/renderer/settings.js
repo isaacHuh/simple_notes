@@ -1,7 +1,7 @@
 const MODEL_TIERS = {
-  low:    { model: 'exaone3.5:2.4b' },
-  medium: { model: 'gemma3:4b' },
-  high:   { model: 'qwen3:8b' },
+  low:    { model: 'qwen3.5:2b' },
+  medium: { model: 'qwen3.5:4b' },
+  high:   { model: 'qwen3.5:9b' },
 };
 
 const modelPullSection = document.getElementById('model-pull-section');
@@ -41,7 +41,7 @@ function getTierForModel(modelName) {
 }
 
 function updateModelUI() {
-  const currentTier = getTierForModel(currentSettings.ollamaModel || 'exaone3.5:2.4b');
+  const currentTier = getTierForModel(currentSettings.ollamaModel || 'qwen3.5:2b');
   document.querySelectorAll('.model-card').forEach((card) => {
     card.classList.toggle('active', card.dataset.tier === currentTier);
   });
