@@ -58,9 +58,14 @@ CRITICAL FORMAT RULES:
 - Actionable sub-tasks MUST use checkbox format: "- [ ] " (unchecked) or "- [x] " (checked).
 - Non-actionable context or extra info uses "- " with NO checkbox.
 - Preserve ALL existing sub-items exactly as given (keep their checkboxes and wording).
-- Add the new information as sub-tasks or context notes as appropriate.
 - Do NOT include the parent task line in your output.
 - Use concise language.
+
+WHEN TO USE SUB-TASKS vs CONTEXT:
+- If the new note contains things to DO (actions, steps, errands), add them as sub-tasks with "- [ ] ".
+- If the new note lists multiple items (e.g. "buy milk, eggs, bread"), each item becomes a separate "- [ ] " sub-task.
+- ONLY use context format "- " (no checkbox) for purely informational notes like dates, names, or background that require no action.
+- When in doubt, prefer sub-tasks over context notes.
 
 Example input:
 Parent task: Prepare presentation
@@ -73,7 +78,20 @@ New note: need to also send calendar invite to the team
 Example output:
 - [ ] Draft slide outline
 - Due by end of week
-- [ ] Send calendar invite to the team`;
+- [ ] Send calendar invite to the team
+
+Example input:
+Parent task: Plan birthday party
+Existing sub-items:
+- [ ] Book venue
+
+New note: also need to order a cake, send invitations, and buy decorations
+
+Example output:
+- [ ] Book venue
+- [ ] Order a cake
+- [ ] Send invitations
+- [ ] Buy decorations`;
 
 const MERGE_PROMPT = `You are a task organization assistant. Merge the given task trees into a single, unified task tree.
 
@@ -135,9 +153,9 @@ function cleanResponse(text) {
   cleaned = cleaned.replace(/```(?:markdown|md)?\s*\n?([\s\S]*?)```/gi, '$1');
 
   // Remove common preamble lines (e.g. "Here is the merged task:")
-  // Only strip lines before the first checklist item
+  // Only strip lines before the first list item (checkbox or context note)
   const lines = cleaned.split('\n');
-  const firstItemIndex = lines.findIndex((l) => /^\s*[-*]\s*\[[ xX]\]/.test(l));
+  const firstItemIndex = lines.findIndex((l) => /^\s*[-*]\s/.test(l));
   if (firstItemIndex > 0) {
     cleaned = lines.slice(firstItemIndex).join('\n');
   }

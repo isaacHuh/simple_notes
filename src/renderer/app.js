@@ -962,6 +962,9 @@ activeList.addEventListener('click', (e) => {
     const textarea = inputDiv.querySelector('textarea');
     const text = textarea.value.trim();
     if (text) {
+      inputDiv.classList.add('hidden');
+      textarea.value = '';
+      adjustWindowHeight();
       handleTaskContext(taskId, text);
     }
     return;
@@ -977,6 +980,9 @@ activeList.addEventListener('keydown', (e) => {
       const taskId = inputDiv.dataset.for;
       const text = e.target.value.trim();
       if (text) {
+        inputDiv.classList.add('hidden');
+        e.target.value = '';
+        adjustWindowHeight();
         handleTaskContext(taskId, text);
       }
     }
